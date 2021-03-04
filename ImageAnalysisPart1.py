@@ -69,10 +69,12 @@ def process_image(entry):
 
 def calc_histogram(image):
     vals = image.mean(axis=2).flatten()
-    counts, bins = np.histogram(vals, range(257))
+    hist, bins = np.histogram(vals, density=True)
     print('--------------------HISTOGRAM--------------------')
-    print('Counts {}'.format(counts, bins)) 
-    print('Bins {}'.format(counts, bins)) 
+    """ print('Hist Counts {}'.format(hist)) 
+    print('Bins {}'.format(bins)) """
+    print('Histogram Sum {}'.format(hist.sum())) 
+    print('Result {}'.format(np.sum(hist * np.diff(bins)))) 
     eqHistogram = equalize_histogram(image, bins)
     print('Equalize Histograms {}'.format(eqHistogram)) 
 
