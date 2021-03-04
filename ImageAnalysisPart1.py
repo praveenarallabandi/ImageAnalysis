@@ -53,7 +53,24 @@ def process_image(entry):
     convertToSingleColorSpectrum(orig3DImage, 'G')
     convertToSingleColorSpectrum(orig3DImage, 'B')
 
-     
+    # Noise addition functions that will allow to corrupt each image with Gaussian & SP
+    print('--------------------NOISE--------------------')
+    resultGaussian = corruptImage('gaussian', origImage)
+    print('>>>>>>>>>> Gaussian >>>>>>>>>> {}'.format(resultGaussian)) 
+    resultSP = corruptImage('sp', origImage)
+    print('>>>>>>>>>> Salt & Pepper >>>>>>>>>> {}'.format(resultSP)) 
+    
+    # Histogram calculation for each individual image
+    calc_histogram(orig3DImage)
+    final(entry)
+
+def calc_histogram(image):
+    vals = image.mean(axis=2).flatten()
+    counts, bins = np.histogram(vals, range(257))
+    print('Histogram - Counts {} - Bins {}'.format(counts, bins)) 
+
+def final(entry):
+    entry.close()
     """ result2DGrayImg = rgb2gray(origImage)
     print('-----------GRAY SCALE---------------')
     print("Size of the image array: ", result2DGrayImg.size)
@@ -66,36 +83,27 @@ def process_image(entry):
     plt.imsave('Cancerouscellsmears2/RAW/' + entry.name + '.png', rgb2gray(origImage))
     print("... File successfully saved") """
 
-    # Noise addition functions that will allow to corrupt each image with Gaussian & SP
-    print('--------------------NOISE--------------------')
-    resultGaussian = corruptImage('gaussian', origImage)
-    print('>>>>>>>>>> Gaussian >>>>>>>>>> {}'.format(resultGaussian)) 
-    resultSP = corruptImage('sp', origImage)
-    print('>>>>>>>>>> Salt & Pepper >>>>>>>>>> {}'.format(resultSP)) 
-    entry.close()
+
 
 def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
+    plt.ylabel('Height {}'.format(orig3DImage.shape[0])) 
+    plt.xlabel('Width {}'.format(orig3DImage.shape[1])) 
     if(colorSpectrum == 'R') :
         print('Value of only R channel {}'.format(orig3DImage[10, 10, 0]))
         plt.title('R channel') 
-        plt.ylabel('Height {}'.format(orig3DImage.shape[0])) 
-        plt.xlabel('Width {}'.format(orig3DImage.shape[1])) 
         plt.imshow(orig3DImage[ : , : , 0])
-        plt.show()
+        
     if(colorSpectrum == 'G') :
         print('Value of only G channel {}'.format(orig3DImage[1, 1, 1]))
         plt.title('G channel') 
-        plt.ylabel('Height {}'.format(orig3DImage.shape[0])) 
-        plt.xlabel('Width {}'.format(orig3DImage.shape[1])) 
         plt.imshow(orig3DImage[ : , : , 1])
-        plt.show()
+
     if(colorSpectrum == 'B') :
         print('Value of only B channel {}'.format(orig3DImage[1, 1, 2]))
         plt.title('B channel') 
-        plt.ylabel('Height {}'.format(orig3DImage.shape[0])) 
-        plt.xlabel('Width {}'.format(orig3DImage.shape[1])) 
         plt.imshow(orig3DImage[ : , : , 2])
-        plt.show()
+
+    # plt.show() # UNCOMMENT THIS - TODO
 
 """ def rgb2gray(rgb):
     return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140]) """
