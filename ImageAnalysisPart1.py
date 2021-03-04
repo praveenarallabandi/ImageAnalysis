@@ -1,6 +1,7 @@
 # imports
 import os
 import numpy as np  
+import matplotlib.pyplot as plt
 
 # resolution for images
 ROWS = 768    
@@ -13,36 +14,101 @@ def process_batch():
     with os.scandir(basepath) as entries:
         for entry in entries:
             if entry.is_file():
-                print('Processing Image - ' + entry.name)
+                # print('Processing Image - ' + )
+                print('Processing Image - {}'.format(entry.name))
                 process_image(entry)
     return basepath
 
 # Process the input image
 def process_image(entry):
-    img = np.fromfile(entry, dtype = np.uint8, count = TotalPixels)
-    print("Dimension of the image array: ", img.ndim)
-    print("Size of the image array: ", img.size)
-    # Conversion from 1D to 2D array
-    img.shape = (img.size // COLS, COLS)
+    # Given images is 1D array
+    origImage = np.fromfile(entry, dtype = np.uint8, count = TotalPixels)
+    print("--------------------1D--------------------")
+    print("Size of the image array: ", origImage.size)
+    print('Type of the image : ' , type(origImage)) 
+    print('Shape of the image : {}'.format(origImage.shape)) 
+    print('Image Height {}'.format(origImage.shape[0])) 
+    print('Dimension of Image {}'.format(origImage.ndim))
+
+    # Conversion from 1D to 2D array - All Gray scale images are in 2D array
+    origImage.shape = (origImage.size // COLS, COLS)
+    print("--------------------2D--------------------")
+    print("Size of the image array: ", origImage.size)
+    print('Shape of the image : {}'.format(origImage.shape)) 
+    print('Image Height {}'.format(origImage.shape[0])) 
+    print('Image Width {}'.format(origImage.shape[1])) 
+    print('Dimension of Image {}'.format(origImage.ndim))
+
+    # Conversion from 2D to 3D RGB
+    orig3DImage = gray2rgb(origImage)
+    print("--------------------3D--------------------")
+    print("Size of the image array: ", orig3DImage.size)
+    print('Shape of the image : {}'.format(orig3DImage.shape)) 
+    print('Image Hight {}'.format(orig3DImage.shape[0])) 
+    print('Image Width {}'.format(orig3DImage.shape[1])) 
+    print('Dimension of Image {}'.format(orig3DImage.ndim))
+
+    # Converting color images to selected single color spectrum
+    convertToSingleColorSpectrum(orig3DImage, 'R')
+    convertToSingleColorSpectrum(orig3DImage, 'G')
+    convertToSingleColorSpectrum(orig3DImage, 'B')
+
+     
+    """ result2DGrayImg = rgb2gray(origImage)
+    print('-----------GRAY SCALE---------------')
+    print("Size of the image array: ", result2DGrayImg.size)
+    print('Type of the image : ' , type(result2DGrayImg)) 
+    print('Shape of the image : {}'.format(result2DGrayImg.shape)) 
+    print('Image Hight {}'.format(result2DGrayImg.shape[0])) 
+    print('Dimension of Image {}'.format(result2DGrayImg.ndim))
+    plt.imsave('Cancerouscellsmears2/RAW/Test.png', result2DGrayImg, cmap='gray')
+    entry.close()
+    plt.imsave('Cancerouscellsmears2/RAW/' + entry.name + '.png', rgb2gray(origImage))
+    print("... File successfully saved") """
 
     # Noise addition functions that will allow to corrupt each image with Gaussian & SP
-    resultGaussian = corruptImage('gaussian', img)
-    print('Gaussian Result - ')
-    print(resultGaussian)
-    resultSP = corruptImage('sp', img)
-    print('Salt & Pepper Result - ')
-    print(resultSP)
-    
-    # Converting color images to selected single color spectrum
-    print("New dimension of the array:", img.ndim)
-    print("----------------------------------------------------")
-    print(" The 2D array of the original image is: \n", img)
-    print("----------------------------------------------------")
-    print("The shape of the original image array is: ", img.shape)
-    # Save the output image
-    print("... Save the output image")
-    img.astype('int8').tofile(entry.name + '.raw')
-    print("... File successfully saved")
+    print('--------------------NOISE--------------------')
+    resultGaussian = corruptImage('gaussian', origImage)
+    print('>>>>>>>>>> Gaussian >>>>>>>>>> {}'.format(resultGaussian)) 
+    resultSP = corruptImage('sp', origImage)
+    print('>>>>>>>>>> Salt & Pepper >>>>>>>>>> {}'.format(resultSP)) 
+    entry.close()
+
+def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
+    if(colorSpectrum == 'R') :
+        print('Value of only R channel {}'.format(orig3DImage[10, 10, 0]))
+        plt.title('R channel') 
+        plt.ylabel('Height {}'.format(orig3DImage.shape[0])) 
+        plt.xlabel('Width {}'.format(orig3DImage.shape[1])) 
+        plt.imshow(orig3DImage[ : , : , 0])
+        plt.show()
+    if(colorSpectrum == 'G') :
+        print('Value of only G channel {}'.format(orig3DImage[1, 1, 1]))
+        plt.title('G channel') 
+        plt.ylabel('Height {}'.format(orig3DImage.shape[0])) 
+        plt.xlabel('Width {}'.format(orig3DImage.shape[1])) 
+        plt.imshow(orig3DImage[ : , : , 1])
+        plt.show()
+    if(colorSpectrum == 'B') :
+        print('Value of only B channel {}'.format(orig3DImage[1, 1, 2]))
+        plt.title('B channel') 
+        plt.ylabel('Height {}'.format(orig3DImage.shape[0])) 
+        plt.xlabel('Width {}'.format(orig3DImage.shape[1])) 
+        plt.imshow(orig3DImage[ : , : , 2])
+        plt.show()
+
+""" def rgb2gray(rgb):
+    return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140]) """
+
+def gray2rgb(image):
+    """ width, height = image.shape
+    out = np.empty((width, height, 3), dtype=np.uint8)
+    out[:, :, 0] = image
+    out[:, :, 1] = image
+    out[:, :, 2] = image """
+    # https://stackoverflow.com/questions/59219210/extend-a-greyscale-image-to-fit-a-rgb-image
+    out = np.dstack((image, np.zeros_like(image) + 255, np.zeros_like(image) + 255)) 
+    return out
 
 def corruptImage(noise_typ, image):
    if noise_typ == "gaussian":
@@ -72,6 +138,7 @@ def corruptImage(noise_typ, image):
               for i in image.shape]
       out[coords] = 0
       return out
+
 basepath = process_batch()
 
 
