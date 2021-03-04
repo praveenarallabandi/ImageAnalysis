@@ -64,7 +64,7 @@ def process_image(entry):
     calc_histogram(orig3DImage)
 
     # Selected image quantization technique for user-specified levels
-    image_quantization(orig3DImage, 256)
+    image_quantization(orig3DImage, 150)
     final(entry)
 
 def calc_histogram(image):
