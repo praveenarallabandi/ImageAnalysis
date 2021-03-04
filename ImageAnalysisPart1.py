@@ -67,23 +67,25 @@ def process_image(entry):
 def calc_histogram(image):
     vals = image.mean(axis=2).flatten()
     counts, bins = np.histogram(vals, range(257))
-    print('Histogram - Counts {} - Bins {}'.format(counts, bins)) 
+    print('--------------------HISTOGRAM--------------------')
+    print('Counts {}'.format(counts, bins)) 
+    print('Bins {}'.format(counts, bins)) 
+    eqHistogram = equalize_histogram(image, bins)
+    print('Equalize Histograms {}'.format(eqHistogram)) 
 
-def final(entry):
-    entry.close()
-    """ result2DGrayImg = rgb2gray(origImage)
-    print('-----------GRAY SCALE---------------')
-    print("Size of the image array: ", result2DGrayImg.size)
-    print('Type of the image : ' , type(result2DGrayImg)) 
-    print('Shape of the image : {}'.format(result2DGrayImg.shape)) 
-    print('Image Hight {}'.format(result2DGrayImg.shape[0])) 
-    print('Dimension of Image {}'.format(result2DGrayImg.ndim))
-    plt.imsave('Cancerouscellsmears2/RAW/Test.png', result2DGrayImg, cmap='gray')
-    entry.close()
-    plt.imsave('Cancerouscellsmears2/RAW/' + entry.name + '.png', rgb2gray(origImage))
-    print("... File successfully saved") """
-
-
+def equalize_histogram(a, bins):
+	a = np.array(a)
+	hist, bins2 = np.histogram(a, bins=bins)
+	#Compute CDF from histogram
+	cdf = np.cumsum(hist, dtype=np.float64)
+	cdf = np.hstack(([0], cdf))
+	cdf = cdf / cdf[-1]
+	#Do equalization
+	binnum = np.digitize(a, bins, True)-1
+	neg = np.where(binnum < 0)
+	binnum[neg] = 0
+	aeq = cdf[binnum] * bins[-1]
+	return aeq
 
 def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
     plt.ylabel('Height {}'.format(orig3DImage.shape[0])) 
@@ -104,9 +106,6 @@ def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
         plt.imshow(orig3DImage[ : , : , 2])
 
     # plt.show() # UNCOMMENT THIS - TODO
-
-""" def rgb2gray(rgb):
-    return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140]) """
 
 def gray2rgb(image):
     """ width, height = image.shape
@@ -146,6 +145,23 @@ def corruptImage(noise_typ, image):
               for i in image.shape]
       out[coords] = 0
       return out
+
+def final(entry):
+    entry.close()
+    """ result2DGrayImg = rgb2gray(origImage)
+    print('-----------GRAY SCALE---------------')
+    print("Size of the image array: ", result2DGrayImg.size)
+    print('Type of the image : ' , type(result2DGrayImg)) 
+    print('Shape of the image : {}'.format(result2DGrayImg.shape)) 
+    print('Image Hight {}'.format(result2DGrayImg.shape[0])) 
+    print('Dimension of Image {}'.format(result2DGrayImg.ndim))
+    plt.imsave('Cancerouscellsmears2/RAW/Test.png', result2DGrayImg, cmap='gray')
+    entry.close()
+    plt.imsave('Cancerouscellsmears2/RAW/' + entry.name + '.png', rgb2gray(origImage))
+    print("... File successfully saved") """
+
+""" def rgb2gray(rgb):
+    return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140]) """
 
 basepath = process_batch()
 
