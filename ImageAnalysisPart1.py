@@ -9,9 +9,9 @@ COLS =  568
 TotalPixels = ROWS * COLS
 
 # Process files in directory as a batch
-def process_batch():
-    basepath = ('./Cancerouscellsmears2')
-    with os.scandir(basepath) as entries:
+def process_batch(path):
+    # basepath = ('./Cancerouscellsmears2')
+    with os.scandir(path) as entries:
         for entry in entries:
             if entry.is_file():
                 # print('Processing Image - ' + )
@@ -55,22 +55,21 @@ def process_image(entry):
 
     # Noise addition functions that will allow to corrupt each image with Gaussian & SP
     print('--------------------NOISE--------------------')
-    resultGaussian = corruptImage('gaussian', origImage)
-    print('>>>>>>>>>> Gaussian >>>>>>>>>> {}'.format(resultGaussian)) 
-    resultSP = corruptImage('sp', origImage)
-    print('>>>>>>>>>> Salt & Pepper >>>>>>>>>> {}'.format(resultSP)) 
+    corruptImage('gaussian', origImage)
+    corruptImage('sp', origImage)
     
     # Histogram calculation for each individual image
+    print('--------------------HISTOGRAM--------------------')
     calc_histogram(orig3DImage)
 
     # Selected image quantization technique for user-specified levels
+    print('--------------------IMAGE QUANTIZATION--------------------')
     image_quantization(orig3DImage, 150)
     final(entry)
 
 def calc_histogram(image):
     vals = image.mean(axis=2).flatten()
     hist, bins = np.histogram(vals, density=True)
-    print('--------------------HISTOGRAM--------------------')
     """ print('Hist Counts {}'.format(hist)) 
     print('Bins {}'.format(bins)) """
     print('Histogram Sum {}'.format(hist.sum())) 
@@ -95,7 +94,6 @@ def equalize_histogram(a, bins):
 def image_quantization(image, level):
     # https://stackoverflow.com/questions/38152081/how-do-you-quantize-a-simple-input-using-python - TODO
     result =  level * np.round(image/level) 
-    print('--------------------IMAGE QUANTIZATION--------------------')
     print('Result {}'.format(result))
 
 def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
@@ -137,25 +135,28 @@ def corruptImage(noise_typ, image):
       gauss = np.random.normal(mean,sigma,(row,col))
       gauss = gauss.reshape(row,col)
       noisy = image + gauss
-      return noisy
+      print('>>>>>>>>>> Gaussian >>>>>>>>>>') 
+      print(format(noisy)) 
+      
    elif noise_typ == "sp":
       row,col = image.shape
       s_vs_p = 0.5
       amount = 0.004
-      out = np.copy(image)
+      sp = np.copy(image)
       # Salt mode
       num_salt = np.ceil(amount * image.size * s_vs_p)
       coords = [np.random.randint(0, i - 1, int(num_salt))
               for i in image.shape]
       # out[coords] = 1
-      out[tuple(coords)]
-
+      sp[tuple(coords)]
       # Pepper mode
       num_pepper = np.ceil(amount* image.size * (1. - s_vs_p))
       coords = [np.random.randint(0, i - 1, int(num_pepper))
               for i in image.shape]
-      out[coords] = 0
-      return out
+      sp[coords] = 0
+      print('>>>>>>>>>> Salt & Pepper >>>>>>>>>>') 
+      print(format(sp)) 
+      # return out
 
 def final(entry):
     entry.close()
@@ -174,7 +175,11 @@ def final(entry):
 """ def rgb2gray(rgb):
     return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140]) """
 
-basepath = process_batch()
+print('----------IMAGE ANALYSIS-------------------')
+path = input('Enter images relative path: ')
+if(path == '') :
+    path = './Cancerouscellsmears2'
+basepath = process_batch(path)
 
 
 
