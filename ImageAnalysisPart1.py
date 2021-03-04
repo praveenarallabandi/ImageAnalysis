@@ -62,6 +62,9 @@ def process_image(entry):
     
     # Histogram calculation for each individual image
     calc_histogram(orig3DImage)
+
+    # Selected image quantization technique for user-specified levels
+    image_quantization(orig3DImage, 256)
     final(entry)
 
 def calc_histogram(image):
@@ -86,6 +89,12 @@ def equalize_histogram(a, bins):
 	binnum[neg] = 0
 	aeq = cdf[binnum] * bins[-1]
 	return aeq
+
+def image_quantization(image, level):
+    # https://stackoverflow.com/questions/38152081/how-do-you-quantize-a-simple-input-using-python - TODO
+    result =  level * np.round(image/level) 
+    print('--------------------IMAGE QUANTIZATION--------------------')
+    print('Result {}'.format(result))
 
 def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
     plt.ylabel('Height {}'.format(orig3DImage.shape[0])) 
