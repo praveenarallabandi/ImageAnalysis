@@ -69,11 +69,11 @@ def process_image(entry):
     
     # Histogram calculation for each individual image
     print('--------------------HISTOGRAM--------------------')
-    calc_histogram(orig3DImage)
+    calc_histogram(origImage)
 
     # Selected image quantization technique for user-specified levels
     print('--------------------IMAGE QUANTIZATION--------------------')
-    image_quantization(orig3DImage, 150)
+    image_quantization(origImage, 150)
 
     # Linear filter with user-specified mask size and pixel weights
     print('--------------------FILTERING OPERATIONS--------------------')
@@ -128,7 +128,7 @@ def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
         plt.title('B channel') 
         plt.imshow(orig3DImage[ : , : , 2])
 
-    plt.show() # UNCOMMENT THIS - TODO
+    # plt.show() # UNCOMMENT THIS - TODO
 
 def pltImage(image, title):
     plt.ylabel('Height {}'.format(image.shape[0])) 
@@ -136,7 +136,7 @@ def pltImage(image, title):
     plt.title(title) 
     plt.axis('off')
     plt.imshow(image)
-    plt.show()
+    # plt.show()
 
 def gray2rgb(image):
     """ width, height = image.shape
@@ -153,36 +153,35 @@ def rgb2gray(img):
     return np.dot(img[...,:3], [0.2989, 0.5870, 0.1140])
 
 def corruptImage(noise_typ, image):
-   if noise_typ == "gaussian":
-      row,col= image.shape
-      mean = 0
-      var = 0.1
-      sigma = var**0.5
-      gauss = np.random.normal(mean,sigma,(row,col))
-      gauss = gauss.reshape(row,col)
-      noisy = image + gauss
-      print('>>>>>>>>>> Gaussian >>>>>>>>>>') 
-      print(format(noisy)) 
-      
-   elif noise_typ == "sp":
-      row,col = image.shape
-      s_vs_p = 0.5
-      amount = 0.004
-      sp = np.copy(image)
-      # Salt mode
-      num_salt = np.ceil(amount * image.size * s_vs_p)
-      coords = [np.random.randint(0, i - 1, int(num_salt))
-              for i in image.shape]
-      # out[coords] = 1
-      sp[tuple(coords)]
-      # Pepper mode
-      num_pepper = np.ceil(amount* image.size * (1. - s_vs_p))
-      coords = [np.random.randint(0, i - 1, int(num_pepper))
-              for i in image.shape]
-      sp[coords] = 0
-      print('>>>>>>>>>> Salt & Pepper >>>>>>>>>>') 
-      print(format(sp)) 
-      # return out
+    row,col,ch= image.shape
+    if noise_typ == "gaussian":
+        mean = 0
+        var = 0.1
+        sigma = var**0.5
+        gauss = np.random.normal(mean,sigma,(row,col,ch))
+        gauss = gauss.reshape(row,col,ch)
+        noisy = image + gauss
+        print('>>>>>>>>>> Gaussian >>>>>>>>>>') 
+        print(format(noisy)) 
+        
+    elif noise_typ == "sp":
+        s_vs_p = 0.5
+        amount = 0.004
+        sp = np.copy(image)
+        # Salt mode
+        num_salt = np.ceil(amount * image.size * s_vs_p)
+        coords = [np.random.randint(0, i - 1, int(num_salt))
+                for i in image.shape]
+        # out[coords] = 1
+        sp[tuple(coords)]
+        # Pepper mode
+        num_pepper = np.ceil(amount* image.size * (1. - s_vs_p))
+        coords = [np.random.randint(0, i - 1, int(num_pepper))
+                for i in image.shape]
+        sp[coords] = 0
+        print('>>>>>>>>>> Salt & Pepper >>>>>>>>>>') 
+        print(format(sp)) 
+        # return out
 
 def linearFilterGaussian(image, l=5, sig=1.):
     # https://stackoverflow.com/questions/29731726/how-to-calculate-a-gaussian-kernel-matrix-efficiently-in-numpy
