@@ -38,6 +38,7 @@ def process_image(entry):
     print('Image Height {}'.format(origImage.shape[0])) 
     print('Image Width {}'.format(origImage.shape[1])) 
     print('Dimension of Image {}'.format(origImage.ndim))
+    pltImage(origImage)
 
     # Conversion from 2D to 3D RGB
     orig3DImage = gray2rgb(origImage)
@@ -65,6 +66,11 @@ def process_image(entry):
     # Selected image quantization technique for user-specified levels
     print('--------------------IMAGE QUANTIZATION--------------------')
     image_quantization(orig3DImage, 150)
+
+    # Linear filter with user-specified mask size and pixel weights
+    print('--------------------FILTERING OPERATIONS--------------------')
+    linearFilterGaussian(origImage, 5, 1.0)
+
     final(entry)
 
 def calc_histogram(image):
@@ -116,6 +122,14 @@ def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
 
     # plt.show() # UNCOMMENT THIS - TODO
 
+def pltImage(image):
+    plt.ylabel('Height {}'.format(image.shape[0])) 
+    plt.xlabel('Width {}'.format(image.shape[1])) 
+    plt.title('Image') 
+    plt.axis('off')
+    plt.imshow(image)
+    plt.show()
+
 def gray2rgb(image):
     """ width, height = image.shape
     out = np.empty((width, height, 3), dtype=np.uint8)
@@ -157,6 +171,15 @@ def corruptImage(noise_typ, image):
       print('>>>>>>>>>> Salt & Pepper >>>>>>>>>>') 
       print(format(sp)) 
       # return out
+
+def linearFilterGaussian(image, l=5, sig=1.):
+    #ax = np.linspace(-(l - 1) / 2., (l - 1) / 2., l)
+    ax = np.linspace(image.shape, l)
+    xx, yy = np.meshgrid(ax, ax)
+    kernel = np.exp(-0.5 * (np.square(xx) + np.square(yy)) / np.square(sig))
+    result = kernel / np.sum(kernel)
+    print("linearFilterGaussian: ", result)
+    #plt.imshow(result)
 
 def final(entry):
     entry.close()
