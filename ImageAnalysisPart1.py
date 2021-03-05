@@ -38,7 +38,14 @@ def process_image(entry):
     print('Image Height {}'.format(origImage.shape[0])) 
     print('Image Width {}'.format(origImage.shape[1])) 
     print('Dimension of Image {}'.format(origImage.ndim))
-    pltImage(origImage)
+    """ grayImage = rgb2gray(origImage)
+    print("--------------------GRAYSCALE--------------------")
+    print("Size of the image array: ", grayImage.size)
+    print('Shape of the image : {}'.format(grayImage.shape)) 
+    print('Image Height {}'.format(grayImage.shape[0])) 
+    print('Image Width {}'.format(grayImage.shape[1])) 
+    print('Dimension of Image {}'.format(grayImage.ndim)) """
+    pltImage(origImage, 'Gray Scale Image')
 
     # Conversion from 2D to 3D RGB
     orig3DImage = gray2rgb(origImage)
@@ -72,7 +79,7 @@ def process_image(entry):
     linearFilterGaussian(origImage, 5, 1.0)
 
     final(entry)
-
+    
 def calc_histogram(image):
     vals = image.mean(axis=2).flatten()
     hist, bins = np.histogram(vals, density=True)
@@ -122,10 +129,10 @@ def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
 
     # plt.show() # UNCOMMENT THIS - TODO
 
-def pltImage(image):
+def pltImage(image, title):
     plt.ylabel('Height {}'.format(image.shape[0])) 
     plt.xlabel('Width {}'.format(image.shape[1])) 
-    plt.title('Image') 
+    plt.title(title) 
     plt.axis('off')
     plt.imshow(image)
     plt.show()
@@ -139,6 +146,9 @@ def gray2rgb(image):
     # https://stackoverflow.com/questions/59219210/extend-a-greyscale-image-to-fit-a-rgb-image
     out = np.dstack((image, np.zeros_like(image) + 255, np.zeros_like(image) + 255)) 
     return out
+
+def rgb2gray(img):
+    return np.dot(img[...,:3], [0.2989, 0.5870, 0.1140])
 
 def corruptImage(noise_typ, image):
    if noise_typ == "gaussian":
@@ -173,6 +183,7 @@ def corruptImage(noise_typ, image):
       # return out
 
 def linearFilterGaussian(image, l=5, sig=1.):
+    # https://stackoverflow.com/questions/29731726/how-to-calculate-a-gaussian-kernel-matrix-efficiently-in-numpy
     #ax = np.linspace(-(l - 1) / 2., (l - 1) / 2., l)
     ax = np.linspace(image.shape, l)
     xx, yy = np.meshgrid(ax, ax)
@@ -195,8 +206,6 @@ def final(entry):
     plt.imsave('Cancerouscellsmears2/RAW/' + entry.name + '.png', rgb2gray(origImage))
     print("... File successfully saved") """
 
-""" def rgb2gray(rgb):
-    return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140]) """
 
 print('----------IMAGE ANALYSIS-------------------')
 path = input('Enter images relative path: ')
