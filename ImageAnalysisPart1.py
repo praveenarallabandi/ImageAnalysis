@@ -14,34 +14,37 @@ def process_batch(path):
     with os.scandir(path) as entries:
         for entry in entries:
             if entry.is_file():
-                # print('Processing Image - ' + )
                 print('Processing Image - {}'.format(entry.name))
                 process_image(entry)
+            else:
+                print('Not valid file - {}'.format(entry.name))
     return basepath
 
 # Process the input image
 def process_image(entry):
     # Given images is 1D array
-    origImage = np.fromfile(entry, dtype = np.uint8, count = TotalPixels)
-    print("--------------------1D--------------------")
+    # origImage = np.fromfile(entry, dtype = np.uint8, count = TotalPixels)
+    origImage = plt.imread('./Cancerouscellsmears2/' + entry.name)
+    print("--------------------ORIGINAL IMAGE--------------------")
     print("Size of the image array: ", origImage.size)
     print('Type of the image : ' , type(origImage)) 
     print('Shape of the image : {}'.format(origImage.shape)) 
     print('Image Height {}'.format(origImage.shape[0])) 
     print('Dimension of Image {}'.format(origImage.ndim))
+    pltImage(origImage, 'Original Image')
 
     # Conversion from 1D to 2D array - All Gray scale images are in 2D array
-    origImage.shape = (origImage.size // COLS, COLS)
+    """ origImage.shape = (origImage.size // COLS, COLS)
     print("--------------------2D--------------------")
     print("Size of the image array: ", origImage.size)
     print('Shape of the image : {}'.format(origImage.shape)) 
     print('Image Height {}'.format(origImage.shape[0])) 
     print('Image Width {}'.format(origImage.shape[1])) 
     print('Dimension of Image {}'.format(origImage.ndim))
-    pltImage(origImage, 'Gray Scale Image')
-
+    pltImage(origImage, '2D') """
+    
     # Conversion from 2D to 3D RGB
-    orig3DImage = gray2rgb(origImage)
+    """ orig3DImage = gray2rgb(origImage)
     print("--------------------3D--------------------")
     print("Size of the image array: ", orig3DImage.size)
     print('Shape of the image : {}'.format(orig3DImage.shape)) 
@@ -49,12 +52,15 @@ def process_image(entry):
     print('Image Width {}'.format(orig3DImage.shape[1])) 
     print('Dimension of Image {}'.format(orig3DImage.ndim))
     print('Maximum RGB value in this image {}'.format(orig3DImage.max())) 
-    print('Minimum RGB value in this image {}'.format(orig3DImage.min()))
+    print('Minimum RGB value in this image {}'.format(orig3DImage.min())) """
 
     # Converting color images to selected single color spectrum
-    convertToSingleColorSpectrum(orig3DImage, 'R')
-    convertToSingleColorSpectrum(orig3DImage, 'G')
-    convertToSingleColorSpectrum(orig3DImage, 'B')
+    convertToSingleColorSpectrum(origImage, 'R')
+    convertToSingleColorSpectrum(origImage, 'G')
+    convertToSingleColorSpectrum(origImage, 'B')
+    gray = rgb2gray(origImage)
+    gray = gray(origImage)
+    pltImage(gray, 'Gray Scale')
 
     # Noise addition functions that will allow to corrupt each image with Gaussian & SP
     print('--------------------NOISE--------------------')
@@ -139,12 +145,13 @@ def gray2rgb(image):
     out[:, :, 1] = image
     out[:, :, 2] = image """
     # https://stackoverflow.com/questions/59219210/extend-a-greyscale-image-to-fit-a-rgb-image
-    # out = np.dstack((image, np.zeros_like(image) + 255, np.zeros_like(image))) 
-    out = np.dstack((image, image, image))
+    out = np.dstack((image, np.zeros_like(image) + 255, np.zeros_like(image) + 255)) 
+    # out = np.dstack((image, image, image))
     return out
 
 def rgb2gray(img):
-    return np.dot(img[...,:3], [0.2989, 0.5870, 0.1140])
+    return lambda rgb : np.dot(rgb[... , :3] , [0.299 , 0.587, 0.114])
+    # return np.dot(img[...,:3], [0.2989, 0.5870, 0.1140])
 
 def corruptImage(noise_typ, image):
    if noise_typ == "gaussian":
@@ -180,8 +187,8 @@ def corruptImage(noise_typ, image):
 
 def linearFilterGaussian(image, l=5, sig=1.):
     # https://stackoverflow.com/questions/29731726/how-to-calculate-a-gaussian-kernel-matrix-efficiently-in-numpy
-    #ax = np.linspace(-(l - 1) / 2., (l - 1) / 2., l)
-    ax = np.linspace(image.shape, l)
+    ax = np.linspace(-(l - 1) / 2., (l - 1) / 2., l)
+    # ax = np.linspace(image.shape, l)
     xx, yy = np.meshgrid(ax, ax)
     kernel = np.exp(-0.5 * (np.square(xx) + np.square(yy)) / np.square(sig))
     result = kernel / np.sum(kernel)
