@@ -38,13 +38,6 @@ def process_image(entry):
     print('Image Height {}'.format(origImage.shape[0])) 
     print('Image Width {}'.format(origImage.shape[1])) 
     print('Dimension of Image {}'.format(origImage.ndim))
-    """ grayImage = rgb2gray(origImage)
-    print("--------------------GRAYSCALE--------------------")
-    print("Size of the image array: ", grayImage.size)
-    print('Shape of the image : {}'.format(grayImage.shape)) 
-    print('Image Height {}'.format(grayImage.shape[0])) 
-    print('Image Width {}'.format(grayImage.shape[1])) 
-    print('Dimension of Image {}'.format(grayImage.ndim)) """
     pltImage(origImage, 'Gray Scale Image')
 
     # Conversion from 2D to 3D RGB
@@ -55,6 +48,8 @@ def process_image(entry):
     print('Image Hight {}'.format(orig3DImage.shape[0])) 
     print('Image Width {}'.format(orig3DImage.shape[1])) 
     print('Dimension of Image {}'.format(orig3DImage.ndim))
+    print('Maximum RGB value in this image {}'.format(orig3DImage.max())) 
+    print('Minimum RGB value in this image {}'.format(orig3DImage.min()))
 
     # Converting color images to selected single color spectrum
     convertToSingleColorSpectrum(orig3DImage, 'R')
@@ -118,16 +113,16 @@ def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
         plt.imshow(orig3DImage[ : , : , 0])
         
     if(colorSpectrum == 'G') :
-        print('Value of only G channel {}'.format(orig3DImage[1, 1, 1]))
+        print('Value of only G channel {}'.format(orig3DImage[10, 10, 1]))
         plt.title('G channel') 
         plt.imshow(orig3DImage[ : , : , 1])
 
     if(colorSpectrum == 'B') :
-        print('Value of only B channel {}'.format(orig3DImage[1, 1, 2]))
+        print('Value of only B channel {}'.format(orig3DImage[10, 10, 2]))
         plt.title('B channel') 
         plt.imshow(orig3DImage[ : , : , 2])
 
-    # plt.show() # UNCOMMENT THIS - TODO
+    plt.show() # UNCOMMENT THIS - TODO
 
 def pltImage(image, title):
     plt.ylabel('Height {}'.format(image.shape[0])) 
@@ -144,7 +139,8 @@ def gray2rgb(image):
     out[:, :, 1] = image
     out[:, :, 2] = image """
     # https://stackoverflow.com/questions/59219210/extend-a-greyscale-image-to-fit-a-rgb-image
-    out = np.dstack((image, np.zeros_like(image) + 255, np.zeros_like(image) + 255)) 
+    # out = np.dstack((image, np.zeros_like(image) + 255, np.zeros_like(image))) 
+    out = np.dstack((image, image, image))
     return out
 
 def rgb2gray(img):
