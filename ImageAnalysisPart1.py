@@ -59,7 +59,7 @@ def process_image(entry):
     convertToSingleColorSpectrum(origImage, 'G')
     convertToSingleColorSpectrum(origImage, 'B')
     gray = rgb2gray(origImage)
-    gray = gray(origImage)
+    # gray = gray(origImage)
     pltImage(gray, 'Gray Scale')
 
     # Noise addition functions that will allow to corrupt each image with Gaussian & SP
@@ -150,8 +150,7 @@ def gray2rgb(image):
     return out
 
 def rgb2gray(img):
-    return lambda rgb : np.dot(rgb[... , :3] , [0.299 , 0.587, 0.114])
-    # return np.dot(img[...,:3], [0.2989, 0.5870, 0.1140])
+    return np.dot(img[...,:3], [0.2989, 0.5870, 0.1140])
 
 def corruptImage(noise_typ, image):
    if noise_typ == "gaussian":
