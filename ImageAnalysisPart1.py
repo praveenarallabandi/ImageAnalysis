@@ -53,48 +53,25 @@ def groupImageClass(entries):
     imageClasses['moderate'] = moderate
     imageClasses['severe'] = severe
 
-    # print('Keys - {}'.format(imageClasses.keys()))
-    # print('Values - {}'.format(imageClasses.values()))
     for imageClass in imageClasses:
-        # print('Processing Image - {}'.format(imageClasses[imageClass]))
         for image in imageClasses[imageClass]:
             print('Processing Image - {}'.format(image.name))
             process_image(image)
-    print("--- %s seconds ---" % (time.time() - start_time))
+        print('Processig time for' + imageClass + ' - ' + (time.time() - start_time))
+    print('Total Processig time {}'.format(time.time() - start_time))
 
 # Process the input image
 def process_image(entry):
     # Given images is 1D array
     # origImage = np.fromfile(entry, dtype = np.uint8, count = TotalPixels)
     origImage = plt.imread('./Cancerouscellsmears2/' + entry.name)
-    print("--------------------ORIGINAL IMAGE--------------------")
+    """ print("--------------------ORIGINAL IMAGE--------------------")
     print("Size of the image array: ", origImage.size)
     print('Type of the image : ' , type(origImage)) 
     print('Shape of the image : {}'.format(origImage.shape)) 
     print('Image Height {}'.format(origImage.shape[0])) 
     print('Dimension of Image {}'.format(origImage.ndim))
-    pltImage(origImage, 'Original Image')
-
-    # Conversion from 1D to 2D array - All Gray scale images are in 2D array
-    """ origImage.shape = (origImage.size // COLS, COLS)
-    print("--------------------2D--------------------")
-    print("Size of the image array: ", origImage.size)
-    print('Shape of the image : {}'.format(origImage.shape)) 
-    print('Image Height {}'.format(origImage.shape[0])) 
-    print('Image Width {}'.format(origImage.shape[1])) 
-    print('Dimension of Image {}'.format(origImage.ndim))
-    pltImage(origImage, '2D') """
-    
-    # Conversion from 2D to 3D RGB
-    """ orig3DImage = gray2rgb(origImage)
-    print("--------------------3D--------------------")
-    print("Size of the image array: ", orig3DImage.size)
-    print('Shape of the image : {}'.format(orig3DImage.shape)) 
-    print('Image Hight {}'.format(orig3DImage.shape[0])) 
-    print('Image Width {}'.format(orig3DImage.shape[1])) 
-    print('Dimension of Image {}'.format(orig3DImage.ndim))
-    print('Maximum RGB value in this image {}'.format(orig3DImage.max())) 
-    print('Minimum RGB value in this image {}'.format(orig3DImage.min())) """
+    pltImage(origImage, 'Original Image') """
 
     # Converting color images to selected single color spectrum
     convertToSingleColorSpectrum(origImage, 'R')
@@ -176,7 +153,7 @@ def pltImage(image, title):
     plt.title(title) 
     plt.axis('off')
     plt.imshow(image)
-    plt.show()
+    # plt.show()
 
 def gray2rgb(image):
     """ width, height = image.shape
@@ -222,24 +199,24 @@ def corruptImage(noise_typ, image):
         sp[coords] = 0
         print('>>>>>>>>>> Salt & Pepper >>>>>>>>>>') 
         print(format(sp)) 
-        # return out
+        # return sp
 
-def linearFilterGaussian(image, size=5, sigma=1.):
+def linearFilterGaussian(image, maskSize=5, sigma=1.):
     # converti to 2D gray image first
     gray = rgb2gray(image)
-    print("--------------------2D - GRAY--------------------")
+    """ print("--------------------2D - GRAY--------------------")
     print("Size of the image array: ", gray.size)
     print('Shape of the image : {}'.format(gray.shape)) 
     print('Image Height {}'.format(gray.shape[0])) 
     print('Image Width {}'.format(gray.shape[1])) 
-    print('Dimension of Image {}'.format(gray.ndim))
+    print('Dimension of Image {}'.format(gray.ndim)) """
 
     # https://stackoverflow.com/questions/29731726/how-to-calculate-a-gaussian-kernel-matrix-efficiently-in-numpy
     # https://stackoverflow.com/questions/47369579/how-to-get-the-gaussian-filter
     # https://github.com/joeiddon/rpi_vision/blob/master/test.py
     # https://www.google.com/search?q=apply+gaussian+filter+to+image+%2B+numoy&oq=apply+gaussian+filter+to+image+%2B+numoy&aqs=chrome..69i57j0i333.12931j0j1&sourceid=chrome&ie=UTF-8
     # https://stackoverflow.com/questions/29920114/how-to-gauss-filter-blur-a-floating-point-numpy-array
-    kernel = np.fromfunction(lambda x, y: (1/(2*math.pi*sigma**2)) * math.e ** ((-1*((x-(size-1)/2)**2+(y-(size-1)/2)**2))/(2*sigma**2)), (size, size))
+    kernel = np.fromfunction(lambda x, y: (1/(2*math.pi*sigma**2)) * math.e ** ((-1*((x-(maskSize-1)/2)**2+(y-(maskSize-1)/2)**2))/(2*sigma**2)), (maskSize, maskSize))
     result = kernel / np.sum(kernel)
     
     a = np.apply_along_axis(lambda x: np.convolve(x, result.flatten(), mode='same'), 0, gray)
@@ -250,6 +227,7 @@ def linearFilterGaussian(image, size=5, sigma=1.):
 
 def final(entry):
     print("--- %s seconds ---" % (time.time() - start_time))
+    print('Total Processig time {}'.format(time.time() - start_time))
     entry.close()
     """ result2DGrayImg = rgb2gray(origImage)
     print('-----------GRAY SCALE---------------')
