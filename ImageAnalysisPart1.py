@@ -12,12 +12,13 @@ ROWS = 768
 COLS =  568
 TotalPixels = ROWS * COLS
 imageClasses = {}
+imageClassesProcessTime = {}
 # Process files in directory as a batch
 def process_batch(path):
     # basepath = ('./Cancerouscellsmears2')
     with os.scandir(path) as entries:
         groupImageClass(entries)
-    return basepath
+    print('************COMPLETED**************')
 
 def groupImageClass(entries):
     columnar, parabasal, intermediate, superficial, mild, moderate, severe = [],[], [], [], [], [], []
@@ -57,7 +58,11 @@ def groupImageClass(entries):
         for image in imageClasses[imageClass]:
             print('Processing Image - {}'.format(image.name))
             process_image(image)
-        print('Processig time for' + imageClass + ' - ' + (time.time() - start_time))
+        imageClassesProcessTime[imageClass] = (time.time() - start_time) % 60
+    
+    for classTime in imageClassesProcessTime:
+        print('Processig time for {0} - {1} seconds'.format(classTime, imageClassesProcessTime[classTime]))
+
     print('Total Processig time {}'.format(time.time() - start_time))
 
 # Process the input image
@@ -95,7 +100,7 @@ def process_image(entry):
     print('--------------------FILTERING OPERATIONS--------------------')
     linearFilterGaussian(origImage, 3, 1.5)
 
-    final(entry)
+    # final(entry)
     
 def calc_histogram(image):
     vals = image.mean(axis=2).flatten()
