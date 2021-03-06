@@ -1,7 +1,11 @@
 # imports
 import os
+import math
 import numpy as np  
+from numpy import asarray 
 import matplotlib.pyplot as plt
+import time
+start_time = time.time()
 
 # resolution for images
 ROWS = 768    
@@ -18,6 +22,7 @@ def process_batch(path):
                 process_image(entry)
             else:
                 print('Not valid file - {}'.format(entry.name))
+        print("--- %s seconds ---" % (time.time() - start_time))
     return basepath
 
 # Process the input image
@@ -58,9 +63,6 @@ def process_image(entry):
     convertToSingleColorSpectrum(origImage, 'R')
     convertToSingleColorSpectrum(origImage, 'G')
     convertToSingleColorSpectrum(origImage, 'B')
-    gray = rgb2gray(origImage)
-    # gray = gray(origImage)
-    pltImage(gray, 'Gray Scale')
 
     # Noise addition functions that will allow to corrupt each image with Gaussian & SP
     print('--------------------NOISE--------------------')
@@ -73,11 +75,11 @@ def process_image(entry):
 
     # Selected image quantization technique for user-specified levels
     print('--------------------IMAGE QUANTIZATION--------------------')
-    image_quantization(origImage, 150)
+    image_quantization(origImage, 0.5)
 
     # Linear filter with user-specified mask size and pixel weights
     print('--------------------FILTERING OPERATIONS--------------------')
-    linearFilterGaussian(origImage, 5, 1.0)
+    linearFilterGaussian(origImage, 3, 1.5)
 
     final(entry)
     
@@ -92,6 +94,7 @@ def calc_histogram(image):
     print('Equalize Histograms {}'.format(eqHistogram)) 
 
 def equalize_histogram(a, bins):
+    # https://gist.github.com/TimSC/6f429dfacf523f5c9a58c3b629f0540e
 	a = np.array(a)
 	hist, bins2 = np.histogram(a, bins=bins)
 	#Compute CDF from histogram
@@ -136,7 +139,7 @@ def pltImage(image, title):
     plt.title(title) 
     plt.axis('off')
     plt.imshow(image)
-    # plt.show()
+    plt.show()
 
 def gray2rgb(image):
     """ width, height = image.shape
@@ -150,7 +153,8 @@ def gray2rgb(image):
     return out
 
 def rgb2gray(img):
-    return np.dot(img[...,:3], [0.2989, 0.5870, 0.1140])
+    return np.dot(img[...,:3], [0.299, 0.587,0.114]).astype(np.uint8)
+    # return np.dot(img, [0.2126, 0.7152, 0.0722])
 
 def corruptImage(noise_typ, image):
     row,col,ch= image.shape
@@ -183,17 +187,37 @@ def corruptImage(noise_typ, image):
         print(format(sp)) 
         # return out
 
-def linearFilterGaussian(image, l=5, sig=1.):
+def linearFilterGaussian(image, size=5, sigma=1.):
+    # converti to 2D gray image first
+    gray = rgb2gray(image)
+    print("--------------------2D - GRAY--------------------")
+    print("Size of the image array: ", gray.size)
+    print('Shape of the image : {}'.format(gray.shape)) 
+    print('Image Height {}'.format(gray.shape[0])) 
+    print('Image Width {}'.format(gray.shape[1])) 
+    print('Dimension of Image {}'.format(gray.ndim))
+    # pltImage(gray, 'Gray Scale')
+
     # https://stackoverflow.com/questions/29731726/how-to-calculate-a-gaussian-kernel-matrix-efficiently-in-numpy
-    ax = np.linspace(-(l - 1) / 2., (l - 1) / 2., l)
+    # https://stackoverflow.com/questions/47369579/how-to-get-the-gaussian-filter
+    # https://github.com/joeiddon/rpi_vision/blob/master/test.py
+    # https://stackoverflow.com/questions/29920114/how-to-gauss-filter-blur-a-floating-point-numpy-array
+    # ax = np.linspace(-(l - 1) / 2., (l - 1) / 2., image.shape[0])
+    # ay = np.linspace(-(l - 1) / 2., (l - 1) / 2., image.shape[1])
     # ax = np.linspace(image.shape, l)
-    xx, yy = np.meshgrid(ax, ax)
-    kernel = np.exp(-0.5 * (np.square(xx) + np.square(yy)) / np.square(sig))
+    # xx, yy = np.meshgrid(ax, ay)
+    # kernel = np.exp(-0.5 * (np.square(xx) + np.square(yy)) / np.square(sig))
+    kernel = np.fromfunction(lambda x, y: (1/(2*math.pi*sigma**2)) * math.e ** ((-1*((x-(size-1)/2)**2+(y-(size-1)/2)**2))/(2*sigma**2)), (size, size))
     result = kernel / np.sum(kernel)
-    print("linearFilterGaussian: ", result)
-    #plt.imshow(result)
+    
+    a = np.apply_along_axis(lambda x: np.convolve(x, result.flatten(), mode='same'), 0, gray)
+    a = np.apply_along_axis(lambda x: np.convolve(x, result.flatten(), mode='same'), 1, gray)
+    print("linearFilterGaussian: ", a)
+    pltImage(a, 'Linear Filter')
+    
 
 def final(entry):
+    print("--- %s seconds ---" % (time.time() - start_time))
     entry.close()
     """ result2DGrayImg = rgb2gray(origImage)
     print('-----------GRAY SCALE---------------')
