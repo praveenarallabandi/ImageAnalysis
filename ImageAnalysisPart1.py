@@ -11,19 +11,56 @@ start_time = time.time()
 ROWS = 768    
 COLS =  568
 TotalPixels = ROWS * COLS
-
+imageClasses = {}
 # Process files in directory as a batch
 def process_batch(path):
     # basepath = ('./Cancerouscellsmears2')
     with os.scandir(path) as entries:
-        for entry in entries:
-            if entry.is_file():
-                print('Processing Image - {}'.format(entry.name))
-                process_image(entry)
-            else:
-                print('Not valid file - {}'.format(entry.name))
-        print("--- %s seconds ---" % (time.time() - start_time))
+        groupImageClass(entries)
     return basepath
+
+def groupImageClass(entries):
+    columnar, parabasal, intermediate, superficial, mild, moderate, severe = [],[], [], [], [], [], []
+
+    for entry in entries:
+        if entry.is_file():
+            if entry.name.find('cyl') != -1:
+                columnar.append(entry)
+            
+            if entry.name.find('inter') != -1:
+                intermediate.append(entry)
+            
+            if entry.name.find('para') != -1:
+                parabasal.append(entry)
+            
+            if entry.name.find('super') != -1:
+                superficial.append(entry)
+
+            if entry.name.find('let') != -1:
+                mild.append(entry)
+
+            if entry.name.find('mod') != -1:
+                moderate.append(entry)
+
+            if entry.name.find('svar') != -1:
+                severe.append(entry)
+        
+    imageClasses['columnar'] = columnar
+    imageClasses['parabasal'] = parabasal
+    imageClasses['intermediate'] = intermediate
+    imageClasses['superficial'] = superficial
+    imageClasses['mild'] = mild
+    imageClasses['moderate'] = moderate
+    imageClasses['severe'] = severe
+
+    # print('Keys - {}'.format(imageClasses.keys()))
+    # print('Values - {}'.format(imageClasses.values()))
+    for imageClass in imageClasses:
+        # print('Processing Image - {}'.format(imageClasses[imageClass]))
+        for image in imageClasses[imageClass]:
+            print('Processing Image - {}'.format(image.name))
+            process_image(image)
+    print("--- %s seconds ---" % (time.time() - start_time))
 
 # Process the input image
 def process_image(entry):
@@ -196,17 +233,12 @@ def linearFilterGaussian(image, size=5, sigma=1.):
     print('Image Height {}'.format(gray.shape[0])) 
     print('Image Width {}'.format(gray.shape[1])) 
     print('Dimension of Image {}'.format(gray.ndim))
-    # pltImage(gray, 'Gray Scale')
 
     # https://stackoverflow.com/questions/29731726/how-to-calculate-a-gaussian-kernel-matrix-efficiently-in-numpy
     # https://stackoverflow.com/questions/47369579/how-to-get-the-gaussian-filter
     # https://github.com/joeiddon/rpi_vision/blob/master/test.py
+    # https://www.google.com/search?q=apply+gaussian+filter+to+image+%2B+numoy&oq=apply+gaussian+filter+to+image+%2B+numoy&aqs=chrome..69i57j0i333.12931j0j1&sourceid=chrome&ie=UTF-8
     # https://stackoverflow.com/questions/29920114/how-to-gauss-filter-blur-a-floating-point-numpy-array
-    # ax = np.linspace(-(l - 1) / 2., (l - 1) / 2., image.shape[0])
-    # ay = np.linspace(-(l - 1) / 2., (l - 1) / 2., image.shape[1])
-    # ax = np.linspace(image.shape, l)
-    # xx, yy = np.meshgrid(ax, ay)
-    # kernel = np.exp(-0.5 * (np.square(xx) + np.square(yy)) / np.square(sig))
     kernel = np.fromfunction(lambda x, y: (1/(2*math.pi*sigma**2)) * math.e ** ((-1*((x-(size-1)/2)**2+(y-(size-1)/2)**2))/(2*sigma**2)), (size, size))
     result = kernel / np.sum(kernel)
     
