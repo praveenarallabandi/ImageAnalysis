@@ -115,13 +115,14 @@ def process_image(entry):
     # Given images is 1D array
     # origImage = np.fromfile(entry, dtype = np.uint8, count = TotalPixels)
     origImage = plt.imread('./Cancerouscellsmears2/' + entry.name)
-    """ print("--------------------ORIGINAL IMAGE--------------------")
+    print("--------------------ORIGINAL IMAGE--------------------")
     print("Size of the image array: ", origImage.size)
     print('Type of the image : ' , type(origImage)) 
     print('Shape of the image : {}'.format(origImage.shape)) 
     print('Image Height {}'.format(origImage.shape[0])) 
+    print('Image Width {}'.format(origImage.shape[1]))
     print('Dimension of Image {}'.format(origImage.ndim))
-    pltImage(origImage, 'Original Image') """
+    pltImage(origImage, 'Original Image')
 
     # Converting color images to selected single color spectrum
     convertToSingleColorSpectrum(origImage, 'R')
@@ -145,16 +146,34 @@ def process_image(entry):
     print('--------------------FILTERING OPERATIONS--------------------')
     linearFilterGaussian(origImage, 3, 1.5)
 
-    #final(entry)
+    final(entry)
     
 def calc_histogram(image, entry):
+    # image = asarray(imageInput)
+    # https://stackoverflow.com/questions/22159160/python-calculate-histogram-of-image
     start_time = time.time()
-    vals = image.mean(axis=2).flatten()
+    # vals = image.mean(axis=2).flatten()
+    # print("image {}",format(image))
+    vals = np.mean(image, axis=(0, 1)).flatten()
+    # hist, bins = np.histogram(image.flatten(), vals, density=True)
+    # bins are defaulted to image.max and image.min values
     hist, bins = np.histogram(vals, density=True)
+    print("vals {}",format(vals))
+    print("bins {}",format(bins))
+    print("hist {}",format(hist))
     print('Histogram Sum {}'.format(hist.sum())) 
     print('Result {}'.format(np.sum(hist * np.diff(bins)))) 
+
+    # plot histogram centered on values 0..255
+    # plt.bar(bins[:-1] - 0.5, hist, width=1, edgecolor='none')
+    plt.hist(vals, 256, range=(0.0, 1.0), fc='k', ec='k')
+    plt.show()
+    plt.bar(bins[:-1], hist, width=1, edgecolor='none')
+    plt.xlim([-0.5, 255.5])
+    plt.show()
+
     eqHistogram = equalize_histogram(image, bins)
-    print('Equalize Histograms {}'.format(eqHistogram))
+    #print('Equalize Histogram {}'.format(eqHistogram))
     end_time = (time.time() - start_time) % 60
     temp[entry.name] = end_time
     imageHistogramPt.append(end_time)
@@ -239,7 +258,7 @@ def corruptImage(noise_typ, image):
         gauss = gauss.reshape(row,col,ch)
         noisy = image + gauss
         print('>>>>>>>>>> Gaussian >>>>>>>>>>') 
-        print(format(noisy)) 
+        #print(format(noisy)) 
         
     elif noise_typ == "sp":
         s_vs_p = 0.5
@@ -257,7 +276,7 @@ def corruptImage(noise_typ, image):
                 for i in image.shape]
         sp[coords] = 0
         print('>>>>>>>>>> Salt & Pepper >>>>>>>>>>') 
-        print(format(sp)) 
+        #print(format(sp)) 
         # return sp
     end_time = (time.time() - start_time) % 60
     imageNoisyPt.append(end_time)
