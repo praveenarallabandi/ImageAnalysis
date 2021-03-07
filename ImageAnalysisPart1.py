@@ -13,12 +13,19 @@ COLS =  568
 TotalPixels = ROWS * COLS
 imageClasses = {}
 imageClassesProcessTime = {}
+temp = {}
+imageNoisyPt = []
+imageHistogramPt = []
+imageSingleSpectrumPt = []
+imageQuantizationPt = []
+imageLinearFilterPt = []
+imageMedianFilterPt = []
+
 # Process files in directory as a batch
 def process_batch(path):
     # basepath = ('./Cancerouscellsmears2')
     with os.scandir(path) as entries:
         groupImageClass(entries)
-    print('************COMPLETED**************')
 
 def groupImageClass(entries):
     columnar, parabasal, intermediate, superficial, mild, moderate, severe = [],[], [], [], [], [], []
@@ -59,11 +66,49 @@ def groupImageClass(entries):
             print('Processing Image - {}'.format(image.name))
             process_image(image)
         imageClassesProcessTime[imageClass] = (time.time() - start_time) % 60
-    
+
+    perf_metrics()
+
+def perf_metrics():
+    """ print ('imageHistogramPt {0}'.format(imageHistogramPt))
+    print ('imageHistogramPt lenth {0}'.format(len(imageHistogramPt)))
+    t = sum(imageHistogramPt)
+    print ('imageHistogramPt Sum {0}'.format(t))
+    a = t % len(imageHistogramPt)
+    b = t / len(imageHistogramPt)
+    print ('imageHistogramPt Avg  % {0}'.format(t))
+    print ('imageHistogramPt Avg  / {0}'.format(b)) """
+    print('********************************************************************')
+    print('\t\t PERFORMANCE METRICS ')
+    print('********************************************************************')
+    print('--------------------------------------------------------------------')
+    print('Total Processig time {}'.format(time.time() - start_time))
+    print('--------------------------------------------------------------------')
+    print('--------------------------------------------------------------------')
+    print('Procedure \t Total Execution Time \t Average Time Per Image')
+    print('--------------------------------------------------------------------')
+    ans = sum(imageNoisyPt)
+    avg = ans / len(imageNoisyPt)
+    print('{0} \t\t {1} \t {2}'.format('Noise', ans, avg))
+    ans = sum(imageHistogramPt)
+    avg = ans / len(imageHistogramPt)
+    print('{0} \t {1} \t {2}'.format('Histogram', ans, avg))
+    ans = sum(imageSingleSpectrumPt)
+    avg = ans / len(imageSingleSpectrumPt)
+    print('{0}  {1} \t {2}'.format('Single Spectrum', ans, avg))
+    ans = sum(imageQuantizationPt)
+    avg = ans / len(imageQuantizationPt)
+    print('{0} \t {1} \t {2}'.format('Quantization', ans, avg))
+    ans = sum(imageLinearFilterPt)
+    avg = ans / len(imageLinearFilterPt)
+    print('{0} \t {1} \t {2}'.format('Linear Filter', ans, avg))
+    ans = sum(imageMedianFilterPt)
+    avg = ans / len(imageMedianFilterPt)
+    print('{0} \t {1} \t {2}'.format('Median Filter', ans, avg))
+    print('********************************************************************')
     for classTime in imageClassesProcessTime:
         print('Processig time for {0} - {1} seconds'.format(classTime, imageClassesProcessTime[classTime]))
-
-    print('Total Processig time {}'.format(time.time() - start_time))
+    print('******************************* END *************************************')
 
 # Process the input image
 def process_image(entry):
@@ -90,7 +135,7 @@ def process_image(entry):
     
     # Histogram calculation for each individual image
     print('--------------------HISTOGRAM--------------------')
-    calc_histogram(origImage)
+    calc_histogram(origImage, entry)
 
     # Selected image quantization technique for user-specified levels
     print('--------------------IMAGE QUANTIZATION--------------------')
@@ -100,17 +145,19 @@ def process_image(entry):
     print('--------------------FILTERING OPERATIONS--------------------')
     linearFilterGaussian(origImage, 3, 1.5)
 
-    # final(entry)
+    #final(entry)
     
-def calc_histogram(image):
+def calc_histogram(image, entry):
+    start_time = time.time()
     vals = image.mean(axis=2).flatten()
     hist, bins = np.histogram(vals, density=True)
-    """ print('Hist Counts {}'.format(hist)) 
-    print('Bins {}'.format(bins)) """
     print('Histogram Sum {}'.format(hist.sum())) 
     print('Result {}'.format(np.sum(hist * np.diff(bins)))) 
     eqHistogram = equalize_histogram(image, bins)
-    print('Equalize Histograms {}'.format(eqHistogram)) 
+    print('Equalize Histograms {}'.format(eqHistogram))
+    end_time = (time.time() - start_time) % 60
+    temp[entry.name] = end_time
+    imageHistogramPt.append(end_time)
 
 def equalize_histogram(a, bins):
     # https://gist.github.com/TimSC/6f429dfacf523f5c9a58c3b629f0540e
@@ -128,11 +175,15 @@ def equalize_histogram(a, bins):
 	return aeq
 
 def image_quantization(image, level):
+    start_time = time.time()
     # https://stackoverflow.com/questions/38152081/how-do-you-quantize-a-simple-input-using-python - TODO
     result =  level * np.round(image/level) 
     print('Result {}'.format(result))
+    end_time = (time.time() - start_time) % 60
+    imageQuantizationPt.append(end_time)
 
 def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
+    start_time = time.time()
     plt.ylabel('Height {}'.format(orig3DImage.shape[0])) 
     plt.xlabel('Width {}'.format(orig3DImage.shape[1])) 
     if(colorSpectrum == 'R') :
@@ -151,6 +202,8 @@ def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
         plt.imshow(orig3DImage[ : , : , 2])
 
     # plt.show() # UNCOMMENT THIS - TODO
+    end_time = (time.time() - start_time) % 60
+    imageSingleSpectrumPt.append(end_time)
 
 def pltImage(image, title):
     plt.ylabel('Height {}'.format(image.shape[0])) 
@@ -176,6 +229,7 @@ def rgb2gray(img):
     # return np.dot(img, [0.2126, 0.7152, 0.0722])
 
 def corruptImage(noise_typ, image):
+    start_time = time.time()
     row,col,ch= image.shape
     if noise_typ == "gaussian":
         mean = 0
@@ -205,8 +259,11 @@ def corruptImage(noise_typ, image):
         print('>>>>>>>>>> Salt & Pepper >>>>>>>>>>') 
         print(format(sp)) 
         # return sp
+    end_time = (time.time() - start_time) % 60
+    imageNoisyPt.append(end_time)
 
 def linearFilterGaussian(image, maskSize=5, sigma=1.):
+    start_time = time.time()
     # converti to 2D gray image first
     gray = rgb2gray(image)
     """ print("--------------------2D - GRAY--------------------")
@@ -228,11 +285,11 @@ def linearFilterGaussian(image, maskSize=5, sigma=1.):
     a = np.apply_along_axis(lambda x: np.convolve(x, result.flatten(), mode='same'), 1, gray)
     print("linearFilterGaussian: ", a)
     pltImage(a, 'Linear Filter')
-    
+    end_time = (time.time() - start_time) % 60
+    imageLinearFilterPt.append(end_time)
 
 def final(entry):
-    print("--- %s seconds ---" % (time.time() - start_time))
-    print('Total Processig time {}'.format(time.time() - start_time))
+    perf_metrics()
     entry.close()
     """ result2DGrayImg = rgb2gray(origImage)
     print('-----------GRAY SCALE---------------')
