@@ -46,12 +46,12 @@ severe = []
 
 
 # Process files in directory as a batch
-def process_batch(path):
+def process_batch(path, input):
     # basepath = ('./Cancerouscellsmears2')
     with os.scandir(path) as entries:
-        groupImageClass(entries)
+        groupImageClass(entries, input)
 
-def groupImageClass(entries):
+def groupImageClass(entries, input):
     columnar, parabasal, intermediate, superficial, mild, moderate, severe = [],[], [], [], [], [], []
 
     for entry in entries:
@@ -89,7 +89,8 @@ def groupImageClass(entries):
         for image in imageClasses[imageClass]:
             print('Processing Image - {}'.format(image.name))
             print('Processing Image Class - {}'.format(imageClass))
-            process_image(image, imageClass)
+            print('Processing Input - {0}, {1}, {2}, {3}, {4}, {5}, {6}'.format(input.path, input.noiseType, input.NoiseStrength, input.NoiseGMeanL, input.NoiseGSD, input.SingleColorSpectum, input.ImageQuantLevel))
+            process_image(image, imageClass, input)
         imageClassesProcessTime[imageClass] = (time.time() - start_time) % 60
 
     perf_metrics()
@@ -136,7 +137,7 @@ def perf_metrics():
     print('******************************* END *************************************')
 
 # Process the input image
-def process_image(entry, imageClass):
+def process_image(entry, imageClass, input):
     # Given images is 1D array
     # origImage = np.fromfile(entry, dtype = np.uint8, count = TotalPixels)
     origImage = plt.imread('./Cancerouscellsmears2/' + entry.name)
@@ -371,7 +372,7 @@ def read_input(input):
                 inp = getInput(row[0],row[1],row[2],row[3],row[4],row[5],row[6])
                 print('HERER.......')
                 print(inp.noiseType)
-                process_batch(path)
+                process_batch(path, inp)
                 line_count += 1
     print(f'Processed {line_count} lines.')
 
