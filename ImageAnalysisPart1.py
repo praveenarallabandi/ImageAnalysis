@@ -5,6 +5,22 @@ import numpy as np
 from numpy import asarray 
 import matplotlib.pyplot as plt
 import time
+import csv
+
+class InputFromCsv: 
+    def __init__(self, path, noiseType, NoiseStrength, NoiseGMeanL, NoiseGSD, SingleColorSpectum, ImageQuantLevel): 
+        self.path = path
+        self.noiseType = noiseType
+        self.NoiseStrength  = NoiseStrength
+        self.NoiseGMeanL = NoiseGMeanL
+        self.NoiseGSD = NoiseGSD
+        self.SingleColorSpectum = SingleColorSpectum
+        self.ImageQuantLevel = ImageQuantLevel
+
+# This function returns an object of Test 
+def getInput(path, noiseType, NoiseStrength, NoiseGMeanL, NoiseGSD, SingleColorSpectum, ImageQuantLevel): 
+    return InputFromCsv(path, noiseType, NoiseStrength, NoiseGMeanL, NoiseGSD, SingleColorSpectum, ImageQuantLevel)
+
 start_time = time.time()
 
 # resolution for images
@@ -20,6 +36,14 @@ imageSingleSpectrumPt = []
 imageQuantizationPt = []
 imageLinearFilterPt = []
 imageMedianFilterPt = []
+
+columnar = []
+parabasal = []
+intermediate = []
+superficial = []
+mild = []
+severe = []
+
 
 # Process files in directory as a batch
 def process_batch(path):
@@ -64,7 +88,8 @@ def groupImageClass(entries):
     for imageClass in imageClasses:
         for image in imageClasses[imageClass]:
             print('Processing Image - {}'.format(image.name))
-            process_image(image)
+            print('Processing Image Class - {}'.format(imageClass))
+            process_image(image, imageClass)
         imageClassesProcessTime[imageClass] = (time.time() - start_time) % 60
 
     perf_metrics()
@@ -111,7 +136,7 @@ def perf_metrics():
     print('******************************* END *************************************')
 
 # Process the input image
-def process_image(entry):
+def process_image(entry, imageClass):
     # Given images is 1D array
     # origImage = np.fromfile(entry, dtype = np.uint8, count = TotalPixels)
     origImage = plt.imread('./Cancerouscellsmears2/' + entry.name)
@@ -124,19 +149,20 @@ def process_image(entry):
     print('Dimension of Image {}'.format(origImage.ndim))
     pltImage(origImage, 'Original Image')
 
+    # Noise addition functions that will allow to corrupt each image with Gaussian & SP
+    print('--------------------NOISE--------------------')
+    noisyImage = corruptImage('gaussian', origImage, 0, 0.1, '')
+    noisyImage = corruptImage('sp', origImage, '', '', 0.5)
+
     # Converting color images to selected single color spectrum
     convertToSingleColorSpectrum(origImage, 'R')
     convertToSingleColorSpectrum(origImage, 'G')
     convertToSingleColorSpectrum(origImage, 'B')
-
-    # Noise addition functions that will allow to corrupt each image with Gaussian & SP
-    print('--------------------NOISE--------------------')
-    corruptImage('gaussian', origImage)
-    corruptImage('sp', origImage)
     
     # Histogram calculation for each individual image
-    print('--------------------HISTOGRAM--------------------')
-    calc_histogram(origImage, entry)
+    print('--------------------HISTOGRAM & EQUALIZE HISTOGRAM--------------------')
+    calc_histogram(origImage)
+
 
     # Selected image quantization technique for user-specified levels
     print('--------------------IMAGE QUANTIZATION--------------------')
@@ -144,44 +170,45 @@ def process_image(entry):
 
     # Linear filter with user-specified mask size and pixel weights
     print('--------------------FILTERING OPERATIONS--------------------')
-    linearFilterGaussian(origImage, 3, 1.5)
+    linearFilterGaussian(noisyImage, 3, 1.5)
 
     final(entry)
     
-def calc_histogram(image, entry):
-    # image = asarray(imageInput)
+def calc_histogram(image):
     # https://stackoverflow.com/questions/22159160/python-calculate-histogram-of-image
+    # https://stackoverflow.com/questions/40700501/how-to-calculate-mean-color-of-image-in-numpy-array
+    # https://matplotlib.org/2.0.2/users/image_tutorial.html
+    # https://github.com/lxcnju/histogram_equalization/blob/master/contrast.py
     start_time = time.time()
-    # vals = image.mean(axis=2).flatten()
-    # print("image {}",format(image))
     vals = np.mean(image, axis=(0, 1)).flatten()
-    # hist, bins = np.histogram(image.flatten(), vals, density=True)
     # bins are defaulted to image.max and image.min values
     hist, bins = np.histogram(vals, density=True)
     print("vals {}",format(vals))
     print("bins {}",format(bins))
     print("hist {}",format(hist))
-    print('Histogram Sum {}'.format(hist.sum())) 
-    print('Result {}'.format(np.sum(hist * np.diff(bins)))) 
+    histSum = hist.sum()
+    print('Histogram Sum {}'.format(histSum)) 
+    # https://numpy.org/doc/stable/reference/generated/numpy.histogram.html?highlight=histogram%20sum
+    print('Cumulative Density Result {}'.format(np.sum(hist * np.diff(bins)))) 
 
     # plot histogram centered on values 0..255
     # plt.bar(bins[:-1] - 0.5, hist, width=1, edgecolor='none')
-    plt.hist(vals, 256, range=(0.0, 1.0), fc='k', ec='k')
+    """ plt.hist(vals, 256, range=(0.0, 1.0), fc='k', ec='k')
     plt.show()
     plt.bar(bins[:-1], hist, width=1, edgecolor='none')
     plt.xlim([-0.5, 255.5])
-    plt.show()
+    plt.show() """
 
-    eqHistogram = equalize_histogram(image, bins)
-    #print('Equalize Histogram {}'.format(eqHistogram))
+    eqHistogram = equalize_histogram(image, hist, bins)
+    print('Equalize Histogram {}'.format(eqHistogram))
     end_time = (time.time() - start_time) % 60
-    temp[entry.name] = end_time
     imageHistogramPt.append(end_time)
+    return hist
 
-def equalize_histogram(a, bins):
+def equalize_histogram(a, hist, bins):
     # https://gist.github.com/TimSC/6f429dfacf523f5c9a58c3b629f0540e
-	a = np.array(a)
-	hist, bins2 = np.histogram(a, bins=bins)
+	""" a = np.array(a)
+	hist, bins2 = np.histogram(a, bins=bins) """
 	#Compute CDF from histogram
 	cdf = np.cumsum(hist, dtype=np.float64)
 	cdf = np.hstack(([0], cdf))
@@ -247,44 +274,45 @@ def rgb2gray(img):
     return np.dot(img[...,:3], [0.299, 0.587,0.114]).astype(np.uint8)
     # return np.dot(img, [0.2126, 0.7152, 0.0722])
 
-def corruptImage(noise_typ, image):
+def corruptImage(noise_typ, image, mean, sd, strength):
     start_time = time.time()
     row,col,ch= image.shape
     if noise_typ == "gaussian":
-        mean = 0
-        var = 0.1
-        sigma = var**0.5
+        mean = mean
+        sd = sd
+        sigma = sd**0.5
         gauss = np.random.normal(mean,sigma,(row,col,ch))
         gauss = gauss.reshape(row,col,ch)
         noisy = image + gauss
         print('>>>>>>>>>> Gaussian >>>>>>>>>>') 
-        #print(format(noisy)) 
+        print(format(noisy)) 
         
     elif noise_typ == "sp":
-        s_vs_p = 0.5
+        strength = strength
         amount = 0.004
-        sp = np.copy(image)
+        noisy = np.copy(image)
         # Salt mode
-        num_salt = np.ceil(amount * image.size * s_vs_p)
+        num_salt = np.ceil(amount * image.size * strength)
         coords = [np.random.randint(0, i - 1, int(num_salt))
                 for i in image.shape]
         # out[coords] = 1
-        sp[tuple(coords)]
+        noisy[tuple(coords)]
         # Pepper mode
-        num_pepper = np.ceil(amount* image.size * (1. - s_vs_p))
+        num_pepper = np.ceil(amount* image.size * (1. - strength))
         coords = [np.random.randint(0, i - 1, int(num_pepper))
                 for i in image.shape]
-        sp[coords] = 0
+        noisy[coords] = 0
         print('>>>>>>>>>> Salt & Pepper >>>>>>>>>>') 
         #print(format(sp)) 
-        # return sp
+    
     end_time = (time.time() - start_time) % 60
     imageNoisyPt.append(end_time)
+    return noisy
 
-def linearFilterGaussian(image, maskSize=5, sigma=1.):
+def linearFilterGaussian(noisyImage, maskSize=5, sigma=1.):
     start_time = time.time()
     # converti to 2D gray image first
-    gray = rgb2gray(image)
+    gray = rgb2gray(noisyImage)
     """ print("--------------------2D - GRAY--------------------")
     print("Size of the image array: ", gray.size)
     print('Shape of the image : {}'.format(gray.shape)) 
@@ -307,6 +335,13 @@ def linearFilterGaussian(image, maskSize=5, sigma=1.):
     end_time = (time.time() - start_time) % 60
     imageLinearFilterPt.append(end_time)
 
+def median_filter(imsga):
+    # https://en.wikipedia.org/wiki/Kernel_(image_processing)
+    # https://github.com/ijmbarr/image-processing-with-numpy/blob/master/image-processing-with-numpy.ipynb
+    # https://github.com/susantabiswas/Digital-Image-Processing/blob/master/Day3/median_filter.py
+    # https://stackoverflow.com/questions/58154630/image-smoothing-using-median-filter
+    return ''
+
 def final(entry):
     perf_metrics()
     entry.close()
@@ -322,12 +357,33 @@ def final(entry):
     plt.imsave('Cancerouscellsmears2/RAW/' + entry.name + '.png', rgb2gray(origImage))
     print("... File successfully saved") """
 
+def read_input(input):
+    with open('input.txt') as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        line_count = 0
+        for row in csv_reader:
+            if line_count == 0:
+                print(f'Column names are {", ".join(row)}')
+                line_count += 1
+            else:
+                print('Path: {0}, NoiseType: {1}, NoiseStrength: {2}, NoiseGMeanL: {3}, NoiseGSD: {4}, SingleColorSpectum: {5}, ImageQuantLevel: {6}'.format(row[0],row[1],row[2],row[3],row[4],row[5],row[6]))
+                #inp = InputFromCsv(row[0],row[1],row[2],row[3],row[4],row[5],row[6])  
+                inp = getInput(row[0],row[1],row[2],row[3],row[4],row[5],row[6])
+                print('HERER.......')
+                print(inp.noiseType)
+                process_batch(path)
+                line_count += 1
+    print(f'Processed {line_count} lines.')
 
 print('----------IMAGE ANALYSIS-------------------')
 path = input('Enter images relative path: ')
 if(path == '') :
     path = './Cancerouscellsmears2'
+input = read_input('./input.txt')
+
 basepath = process_batch(path)
+
+
 
 
 
