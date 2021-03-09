@@ -140,7 +140,7 @@ def perf_metrics():
 def process_image(entry, imageClass, input):
     # Given images is 1D array
     # origImage = np.fromfile(entry, dtype = np.uint8, count = TotalPixels)
-    origImage = plt.imread('./Cancerouscellsmears2/' + entry.name)
+    origImage = plt.imread(input.path + '/' + entry.name)
     print("--------------------ORIGINAL IMAGE--------------------")
     print("Size of the image array: ", origImage.size)
     print('Type of the image : ' , type(origImage)) 
@@ -152,13 +152,18 @@ def process_image(entry, imageClass, input):
 
     # Noise addition functions that will allow to corrupt each image with Gaussian & SP
     print('--------------------NOISE--------------------')
-    noisyImage = corruptImage('gaussian', origImage, 0, 0.1, '')
-    noisyImage = corruptImage('sp', origImage, '', '', 0.5)
+    if(input.noiseType == 'gaussian'):
+        noisyImage = corruptImage('gaussian', origImage, input.NoiseGMeanL, input.NoiseGSD, '')
+    if(input.noiseType == 'sp'):
+        noisyImage = corruptImage('sp', origImage, '', '', float(input.NoiseStrength))
 
     # Converting color images to selected single color spectrum
-    convertToSingleColorSpectrum(origImage, 'R')
-    convertToSingleColorSpectrum(origImage, 'G')
-    convertToSingleColorSpectrum(origImage, 'B')
+    if(input.SingleColorSpectum == 'R'):
+        convertToSingleColorSpectrum(origImage, 'R')
+    if(input.SingleColorSpectum == 'G'):
+        convertToSingleColorSpectrum(origImage, 'G')
+    if(input.SingleColorSpectum == 'B'):
+        convertToSingleColorSpectrum(origImage, 'B')
     
     # Histogram calculation for each individual image
     print('--------------------HISTOGRAM & EQUALIZE HISTOGRAM--------------------')
@@ -167,7 +172,7 @@ def process_image(entry, imageClass, input):
 
     # Selected image quantization technique for user-specified levels
     print('--------------------IMAGE QUANTIZATION--------------------')
-    image_quantization(origImage, 0.5)
+    image_quantization(origImage, float(input.ImageQuantLevel))
 
     # Linear filter with user-specified mask size and pixel weights
     print('--------------------FILTERING OPERATIONS--------------------')
@@ -370,8 +375,6 @@ def read_input(input):
                 print('Path: {0}, NoiseType: {1}, NoiseStrength: {2}, NoiseGMeanL: {3}, NoiseGSD: {4}, SingleColorSpectum: {5}, ImageQuantLevel: {6}'.format(row[0],row[1],row[2],row[3],row[4],row[5],row[6]))
                 #inp = InputFromCsv(row[0],row[1],row[2],row[3],row[4],row[5],row[6])  
                 inp = getInput(row[0],row[1],row[2],row[3],row[4],row[5],row[6])
-                print('HERER.......')
-                print(inp.noiseType)
                 process_batch(path, inp)
                 line_count += 1
     print(f'Processed {line_count} lines.')
