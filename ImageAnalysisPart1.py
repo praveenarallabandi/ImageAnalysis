@@ -34,6 +34,7 @@ imageNoisyPt = []
 imageHistogramPt = []
 imageSingleSpectrumPt = []
 imageQuantizationPt = []
+imageQuantizationMsePt = []
 imageLinearFilterPt = []
 imageMedianFilterPt = []
 
@@ -125,7 +126,10 @@ def perf_metrics():
     ans = sum(imageQuantizationPt)
     avg = ans / len(imageQuantizationPt)
     print('{0} \t {1} \t {2}'.format('Quantization', ans, avg))
-    ans = sum(imageLinearFilterPt)
+    ans = sum(imageQuantizationMsePt)
+    avg = ans / len(imageQuantizationMsePt)
+    print('{0} {1} \t {2}'.format('Quantization - MSE', ans, avg))
+    ans = sum(imageLinearFilterPt)  
     avg = ans / len(imageLinearFilterPt)
     print('{0} \t {1} \t {2}'.format('Linear Filter', ans, avg))
     ans = sum(imageMedianFilterPt)
@@ -172,7 +176,11 @@ def process_image(entry, imageClass, input):
 
     # Selected image quantization technique for user-specified levels
     print('--------------------IMAGE QUANTIZATION--------------------')
-    image_quantization(origImage, float(input.ImageQuantLevel))
+    result = image_quantization(origImage, float(input.ImageQuantLevel))
+
+    # Selected image quantization technique for user-specified levels
+    print('--------------------IMAGE QUANTIZATION MEAN SQUARE ERROR (MSE)--------------------')
+    image_quantization_mse(origImage, result)
 
     # Linear filter with user-specified mask size and pixel weights
     print('--------------------FILTERING OPERATIONS--------------------')
@@ -211,6 +219,7 @@ def calc_histogram(image):
     imageHistogramPt.append(end_time)
     return hist
 
+# HISTOGRAM
 def equalize_histogram(a, hist, bins):
     # https://gist.github.com/TimSC/6f429dfacf523f5c9a58c3b629f0540e
 	""" a = np.array(a)
@@ -226,13 +235,24 @@ def equalize_histogram(a, hist, bins):
 	aeq = cdf[binnum] * bins[-1]
 	return aeq
 
+# IMAGE QUANTIZATION
 def image_quantization(image, level):
     start_time = time.time()
     # https://stackoverflow.com/questions/38152081/how-do-you-quantize-a-simple-input-using-python - TODO
+    print(image)
     result =  level * np.round(image/level) 
     print('Result {}'.format(result))
     end_time = (time.time() - start_time) % 60
     imageQuantizationPt.append(end_time)
+    return result
+
+def image_quantization_mse(image, imageQuant):
+    start_time = time.time()
+
+    mse = (np.square(image - imageQuant)).mean(axis=None)
+    print('MSE {}'.format(mse))
+    end_time = (time.time() - start_time) % 60
+    imageQuantizationMsePt.append(end_time)
 
 def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
     start_time = time.time()
