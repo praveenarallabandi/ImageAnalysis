@@ -2,11 +2,10 @@
 import os
 import toml
 import numpy as np  
-from typing import List, Tuple
+from typing import List
 import matplotlib.pyplot as plt
 import time
-import csv
-from PIL import Image # Used only for exporting images
+from PIL import Image # Used only for importing and exporting images
 
 class InputFromCsv: 
     def __init__(self, path, noiseType, NoiseStrength, NoiseGMeanL, NoiseGSD, SingleColorSpectum, ImageQuantLevel): 
@@ -139,7 +138,8 @@ def process_image(entry, imageClass):
     try:
         # Given images is 1D array
         # origImage = np.fromfile(entry, dtype = np.uint8, count = TotalPixels)
-        origImage = plt.imread(conf["DATA_DIR"] + '/' + entry.name)
+        # origImage = plt.imread(conf["DATA_DIR"] + '/' + entry.name)
+        origImage = np.asarray(Image.open(conf["DATA_DIR"] + entry.name))
         print("--------------------ORIGINAL IMAGE--------------------")
         print("Size of the image array: ", origImage.size)
         print('Type of the image : ' , type(origImage)) 
@@ -151,7 +151,15 @@ def process_image(entry, imageClass):
 
         # Converting color images to selected single color spectrum
         singleSpectrumImage = convertToSingleColorSpectrum(origImage, conf["COLOR_CHANNEL"])
-        
+
+        print("--------------------singleSpectrumImage IMAGE--------------------")
+        print("Size of the image array: ", singleSpectrumImage.size)
+        print('Type of the image : ' , type(singleSpectrumImage)) 
+        print('Shape of the image : {}'.format(singleSpectrumImage.shape)) 
+        print('Image Height {}'.format(singleSpectrumImage.shape[0])) 
+        print('Image Width {}'.format(singleSpectrumImage.shape[1]))
+        print('Dimension of Image {}'.format(singleSpectrumImage.ndim))
+
         # Noise addition functions that will allow to corrupt each image with Gaussian & SP
         print('--------------------NOISE--------------------')
         noisyGaussianImage = corruptImageGaussian(singleSpectrumImage, conf["GAUSS_NOISE_STRENGTH"])
@@ -168,7 +176,7 @@ def process_image(entry, imageClass):
 
         # Selected image quantization technique for user-specified levels
         print('--------------------IMAGE QUANTIZATION MEAN SQUARE ERROR (MSE)--------------------')
-        image_quantization_mse(singleSpectrumImage, quantImage)
+        image_quantization_mse(singleSpectrumImage, eqImage)
 
         # Linear filter with user-specified mask size and pixel weights
         print('--------------------FILTERING OPERATIONS--------------------')
@@ -177,17 +185,19 @@ def process_image(entry, imageClass):
         # mean_filter(noisyImage, 3, 2)
         # median_filter(noisyImage, 2, 2, 2)
 
-        export_image(noisySaltPepperImage, "salt_and_pepper_" + origImage.stem)
-        export_image(noisyGaussianImage, "gaussian_" + origImage.stem)
-        export_image(eqImage, "equalized_" + origImage.stem)
-        export_image(linear, "linear_" + origImage.stem)
-        export_image(linear, "median_" + origImage.stem)
-        export_plot(histogram, "histogram_" + origImage.stem)
-        export_plot(eqHistogram, "eqhistogram_" + origImage.stem)
+        export_image(noisySaltPepperImage, "salt_and_pepper_" + entry.name)
+        export_image(noisyGaussianImage, "gaussian_" + entry.name)
+        export_image(eqImage, "equalized_" + entry.name)
+        export_image(linear, "linear_" + entry.name)
+        export_image(median, "median_" + entry.name)
+        
+        export_plot(histogram, "histogram_" + entry.name)
+        export_plot(eqHistogram, "eqhistogram_" + entry.name)
 
         final(entry)
 
     except Exception as e:
+        print(e)
         return e
     
 
@@ -290,11 +300,9 @@ def rgb2gray(img):
 
 def corruptImageGaussian(image, strength):
     start_time = time.time()
-    
-    row,col,ch= image.shape
     mean = 0.0
-    noise = np.random.normal(mean,strength,(row,col,ch))
-    reshaped_noise = noise.reshape(row,col,ch)
+    noise = np.random.normal(mean,strength,image.size)
+    reshaped_noise = noise.reshape(image.shape)
     gaussian = image + reshaped_noise
     print('>>>>>>>>>> Gaussian >>>>>>>>>>') 
     print(format(gaussian))
@@ -303,10 +311,8 @@ def corruptImageGaussian(image, strength):
     imageNoisyPt.append(end_time)
     return gaussian
 
-def corruptImageSaltAndPepper(noise_typ, image, strength):
+def corruptImageSaltAndPepper(image, strength):
     start_time = time.time()
-    
-    row,col,ch= image.shape
         
     s_vs_p = 0.5
     noisy = np.copy(image)
@@ -357,12 +363,13 @@ def apply_filter(img_array: np.array, img_filter: np.array) -> np.array:
 
 def linearFilter(noisyImage, maskSize=5, weights = List[List[int]]):
     start_time = time.time()
-
+    print('>>>>>>>>>>LINEAR<<<<<<<<<<<<<<<')
     filter = np.array(weights)
     linear = apply_filter(noisyImage, filter)
 
     end_time = (time.time() - start_time) % 60
     imageLinearFilterPt.append(end_time)
+    print(linear)
     return linear
 
 """ def meanFilter(image, maskSize, weights):
@@ -429,11 +436,13 @@ def medianFilter(noisyImage, maskSize=5, weights = List[List[int]]):
     print('>>>>>>>>>>MEDIAN<<<<<<<<<<<<<<<')
     filter = np.array(weights)
     median = apply_median_filter(noisyImage, filter)
+    print(median)
     return median
 
 def final(entry):
     perf_metrics()
     entry.close()
+    test.close()
     """ result2DGrayImg = rgb2gray(origImage)
     print('-----------GRAY SCALE---------------')
     print("Size of the image array: ", result2DGrayImg.size)
@@ -446,25 +455,26 @@ def final(entry):
     plt.imsave('Cancerouscellsmears2/RAW/' + entry.name + '.png', rgb2gray(origImage))
     print("... File successfully saved") """
 
-def export_image(img_arr: np.array, filename: str) -> None:
+def export_image(image: np.array, filename: str) -> None:
     """
     Exports a numpy array as a grey scale bmp image
     """
-    img = Image.fromarray(img_arr)
+    print('Processing {0}'.format(filename))
+    img = Image.fromarray(image)
     img = img.convert("L")
-    img.save(conf["OUTPUT_DIR"] + filename + ".BMP")
+    img.save(conf["OUTPUT_DIR"] + filename)
 
-def export_plot(img_arr: np.array, filename: str) -> None:
+def export_plot(image: np.array, filename: str) -> None:
     """
     exports a historgam as a matplotlib plot
     """
 
-    _ = plt.hist(img_arr, bins=256, range=(0, 256))
+    _ = plt.hist(image, bins=256, range=(0, 256))
     plt.title(filename)
     plt.savefig(conf["OUTPUT_DIR"] + filename + ".png")
     plt.close()
 
-def read_input(input):
+""" def read_input(input):
     with open('input.txt') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         line_count = 0
@@ -478,7 +488,7 @@ def read_input(input):
                 inp = getInput(row[0],row[1],row[2],row[3],row[4],row[5],row[6])
                 process_batch(path, inp)
                 line_count += 1
-    print(f'Processed {line_count} lines.')
+    print(f'Processed {line_count} lines.') """
 
 print('----------IMAGE ANALYSIS-------------------')
 """ # path = input('Enter images relative path: ')

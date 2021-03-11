@@ -13,7 +13,7 @@
 # (i.e. -v $HOME/Repos/CMSC630_Project_1/datasets:/app/datasets)
 #
 #####################################################################
-DATA_DIR = "./Cancerouscellsmears2"
+DATA_DIR = "./test/"
 OUTPUT_DIR = "./output/"
 
 # The number of process workers in the process pool for work on batches
