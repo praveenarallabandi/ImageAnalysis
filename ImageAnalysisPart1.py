@@ -452,8 +452,11 @@ def final(entry):
     print("... File successfully saved") """
 
 def export_image(image: np.array, filename: str) -> None:
-    """
-    Exports a numpy array as a grey scale bmp image
+    """[summary]
+
+    Args:
+        image (np.array): [description]
+        filename (str): [description]
     """
     print('Processing {0}'.format(filename))
     img = Image.fromarray(image)
@@ -470,31 +473,15 @@ def export_plot(image: np.array, filename: str) -> None:
     plt.savefig(conf["OUTPUT_DIR"] + filename + ".png")
     plt.close()
 
-""" def read_input(input):
-    with open('input.txt') as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter=',')
-        line_count = 0
-        for row in csv_reader:
-            if line_count == 0:
-                print(f'Column names are {", ".join(row)}')
-                line_count += 1
-            else:
-                print('Path: {0}, NoiseType: {1}, NoiseStrength: {2}, NoiseGMeanL: {3}, NoiseGSD: {4}, SingleColorSpectum: {5}, ImageQuantLevel: {6}'.format(row[0],row[1],row[2],row[3],row[4],row[5],row[6]))
-                #inp = InputFromCsv(row[0],row[1],row[2],row[3],row[4],row[5],row[6])  
-                inp = getInput(row[0],row[1],row[2],row[3],row[4],row[5],row[6])
-                process_batch(path, inp)
-                line_count += 1
-    print(f'Processed {line_count} lines.') """
+def main():
+    print('----------IMAGE ANALYSIS START-------------------')
+    global conf
+    conf = toml.load('./config.toml')
 
-print('----------IMAGE ANALYSIS-------------------')
-""" # path = input('Enter images relative path: ')
-if(path == '') :
-    path = './Cancerouscellsmears2' """
-global conf
-conf = toml.load('./config.toml')
-# input = read_input('./input.txt')
+    process_batch(conf)
 
-basepath = process_batch(conf)
+if __name__ == "__main__":
+    main()
 
 
 
