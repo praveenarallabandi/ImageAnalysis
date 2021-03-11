@@ -190,17 +190,22 @@ def process_image(entry, imageClass):
         export_image(eqImage, "equalized_" + entry.name)
         export_image(linear, "linear_" + entry.name)
         export_image(median, "median_" + entry.name)
-        
+
         export_plot(histogram, "histogram_" + entry.name)
         export_plot(eqHistogram, "eqhistogram_" + entry.name)
 
-        final(entry)
+        # final(entry)
 
     except Exception as e:
         print(e)
         return e
     
-
+def histogram(image: np.array, bins) -> np.array:
+    vals = np.mean(image, axis=(0,1)).flatten()
+    # bins are defaulted to image.max and image.min values
+    hist, bins2 = np.histogram(vals, bins, density=True)
+    return hist
+    
 # CALCULATE HISTOGRAM    
 def calc_histogram(image):
     # https://stackoverflow.com/questions/22159160/python-calculate-histogram-of-image
@@ -208,23 +213,14 @@ def calc_histogram(image):
     # https://matplotlib.org/2.0.2/users/image_tutorial.html
     # https://github.com/lxcnju/histogram_equalization/blob/master/contrast.py
     start_time = time.time()
-    vals = np.mean(image, axis=(0, 1)).flatten()
-    # bins are defaulted to image.max and image.min values
-    hist, bins = np.histogram(vals, density=True)
-    """ print("vals {}",format(vals))
-    print("bins {}",format(bins))
-    print("hist {}",format(hist))
-    histSum = hist.sum()
-    print('Histogram Sum {}'.format(histSum)) 
-    # https://numpy.org/doc/stable/reference/generated/numpy.histogram.html?highlight=histogram%20sum
-    print('Cumulative Density Result {}'.format(np.sum(hist * np.diff(bins)))) """
-
-    eqHistogram = equalize_histogram(image, hist, bins)
-    img_new = np.reshape(eqHistogram, image.shape)
-    print('Equalize Histogram {}'.format(eqHistogram))
+    maxval = 255.0
+    bins = np.linspace(0.0, maxval, 257)
+    hist = histogram(image, bins)
+    equalized = equalize_histogram(image, hist, bins)
+    imgEqualized = np.reshape(equalized, image.shape)
     end_time = (time.time() - start_time) % 60
     imageHistogramPt.append(end_time)
-    return hist, eqHistogram, img_new
+    return hist, histogram(equalized, bins), imgEqualized
 
 # EQUALIZE HISTOGRAM
 def equalize_histogram(a, hist, bins):
