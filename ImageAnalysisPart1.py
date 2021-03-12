@@ -30,10 +30,10 @@ TotalPixels = ROWS * COLS
 imageClasses = {}
 imageClassesProcessTime = {}
 temp = {}
-imageNoisyPt = []
+imageNoisyGaussianPt = []
 imageHistogramPt = []
 imageSingleSpectrumPt = []
-imageQuantizationPt = []
+imageNoisySaltPepperPt = []
 imageQuantizationMsePt = []
 imageLinearFilterPt = []
 imageMedianFilterPt = []
@@ -107,21 +107,18 @@ def perf_metrics():
     print('--------------------------------------------------------------------')
     print('Procedure \t Total Execution Time \t Average Time Per Image')
     print('--------------------------------------------------------------------')
-    ans = sum(imageNoisyPt)
-    avg = ans / len(imageNoisyPt)
-    print('{0} \t\t {1} \t {2}'.format('Noise', ans, avg))
+    ans = sum(imageNoisyGaussianPt)
+    avg = ans / len(imageNoisyGaussianPt)
+    print('{0} \t {1} \t {2}'.format('Gaussian Noise', ans, avg))
+    ans = sum(imageNoisySaltPepperPt)
+    avg = ans / len(imageNoisySaltPepperPt)
+    print('{0} \t {1} \t {2}'.format('Salt & Pepper', ans, avg))
     ans = sum(imageHistogramPt)
     avg = ans / len(imageHistogramPt)
     print('{0} \t {1} \t {2}'.format('Histogram', ans, avg))
     ans = sum(imageSingleSpectrumPt)
     avg = ans / len(imageSingleSpectrumPt)
     print('{0}  {1} \t {2}'.format('Single Spectrum', ans, avg))
-    ans = sum(imageQuantizationPt)
-    avg = ans / len(imageQuantizationPt)
-    print('{0} \t {1} \t {2}'.format('Quantization', ans, avg))
-    ans = sum(imageQuantizationMsePt)
-    avg = ans / len(imageQuantizationMsePt)
-    print('{0} {1} \t {2}'.format('Quantization - MSE', ans, avg))
     ans = sum(imageLinearFilterPt)  
     avg = ans / len(imageLinearFilterPt)
     print('{0} \t {1} \t {2}'.format('Linear Filter', ans, avg))
@@ -166,17 +163,9 @@ def process_image(entry, imageClass):
         noisySaltPepperImage = corruptImageSaltAndPepper(singleSpectrumImage, conf["SALT_PEPPER_STRENGTH"])
         
         # Histogram calculation for each individual image
-        print('--------------------HISTOGRAM & EQUALIZE HISTOGRAM--------------------')
-        histogram, eqHistogram, eqImage = calc_histogram(singleSpectrumImage)
+        print('--------------------HISTOGRAM, EQUALIZE HISTOGRAM & IMAGE QUANTIZATION--------------------')
+        histogram, eqHistogram, quantizedImage = calc_histogram(singleSpectrumImage)
 
-
-        # Selected image quantization technique for user-specified levels
-        """ print('--------------------IMAGE QUANTIZATION--------------------')
-        quantImage = image_quantization(singleSpectrumImage, conf["IMAGE_QUANT_LEVELS"]) """
-
-        # Selected image quantization technique for user-specified levels
-        print('--------------------IMAGE QUANTIZATION MEAN SQUARE ERROR (MSE)--------------------')
-        image_quantization_mse(singleSpectrumImage, eqImage)
 
         # Linear filter with user-specified mask size and pixel weights
         print('--------------------FILTERING OPERATIONS--------------------')
@@ -187,13 +176,16 @@ def process_image(entry, imageClass):
 
         export_image(noisySaltPepperImage, "salt_and_pepper_" + entry.name)
         export_image(noisyGaussianImage, "gaussian_" + entry.name)
-        export_image(eqImage, "equalized_" + entry.name)
+        export_image(quantizedImage, "equalized_" + entry.name)
         export_image(linear, "linear_" + entry.name)
         export_image(median, "median_" + entry.name)
 
         export_plot(histogram, "histogram_" + entry.name)
         export_plot(eqHistogram, "eqhistogram_" + entry.name)
 
+        # Selected image quantization technique for user-specified levels
+        print('--------------------IMAGE QUANTIZATION MEAN SQUARE ERROR (MSE)--------------------')
+        image_quantization_mse(singleSpectrumImage, quantizedImage, entry.name)
         # final(entry)
 
     except Exception as e:
@@ -233,38 +225,28 @@ def equalize_histogram(image, hist, bins):
     equalized = casted[image]
     return equalized
 
-# IMAGE QUANTIZATION
-def image_quantization(image, level):
-    start_time = time.time()
-    # https://stackoverflow.com/questions/38152081/how-do-you-quantize-a-simple-input-using-python - TODO
-    print(image)
-    result =  level * np.round(image/level) 
-    print('Result {}'.format(result))
-    end_time = (time.time() - start_time) % 60
-    imageQuantizationPt.append(end_time)
-    return result
-
-def image_quantization_mse(image, imageQuant):
+def image_quantization_mse(image, imageQuant, imageName):
     start_time = time.time()
 
     mse = (np.square(image - imageQuant)).mean(axis=None)
-    print('MSE {}'.format(mse))
+    print('<{0}> Completed Execution - MSE: {1}'.format(imageName, mse))
     end_time = (time.time() - start_time) % 60
     imageQuantizationMsePt.append(end_time)
 
 def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
     start_time = time.time()
     if(colorSpectrum == 'R') :
-        return orig3DImage[:, :, 0]
+        img = orig3DImage[:, :, 0]
         
     if(colorSpectrum == 'G') :
-        return orig3DImage[:, :, 1]
+        img = orig3DImage[:, :, 1]
 
     if(colorSpectrum == 'B') :
-        return orig3DImage[:, :, 2]
+        img = orig3DImage[:, :, 2]
 
     end_time = (time.time() - start_time) % 60
     imageSingleSpectrumPt.append(end_time)
+    return img
 
 def pltImage(image, title):
     plt.ylabel('Height {}'.format(image.shape[0])) 
@@ -274,16 +256,6 @@ def pltImage(image, title):
     plt.imshow(image)
     # plt.show()
 
-def gray2rgb(image):
-    """ width, height = image.shape
-    out = np.empty((width, height, 3), dtype=np.uint8)
-    out[:, :, 0] = image
-    out[:, :, 1] = image
-    out[:, :, 2] = image """
-    # https://stackoverflow.com/questions/59219210/extend-a-greyscale-image-to-fit-a-rgb-image
-    out = np.dstack((image, np.zeros_like(image) + 255, np.zeros_like(image) + 255)) 
-    # out = np.dstack((image, image, image))
-    return out
 
 def rgb2gray(img):
     return np.dot(img[...,:3], [0.299, 0.587,0.114]).astype(np.uint8)
@@ -299,7 +271,7 @@ def corruptImageGaussian(image, strength):
     print(format(gaussian))
     
     end_time = (time.time() - start_time) % 60
-    imageNoisyPt.append(end_time)
+    imageNoisyGaussianPt.append(end_time)
     return gaussian
 
 def corruptImageSaltAndPepper(image, strength):
@@ -329,7 +301,7 @@ def corruptImageSaltAndPepper(image, strength):
          
     
     end_time = (time.time() - start_time) % 60
-    imageNoisyPt.append(end_time)
+    imageNoisySaltPepperPt.append(end_time)
     return noisy
 
 def apply_filter(img_array: np.array, img_filter: np.array) -> np.array:
@@ -424,9 +396,12 @@ def medianFilter(noisyImage, maskSize=5, weights = List[List[int]]):
     # https://github.com/ijmbarr/image-processing-with-numpy/blob/master/image-processing-with-numpy.ipynb
     # https://github.com/susantabiswas/Digital-Image-Processing/blob/master/Day3/median_filter.py
     # https://stackoverflow.com/questions/58154630/image-smoothing-using-median-filter
+    start_time = time.time()
     print('>>>>>>>>>>MEDIAN<<<<<<<<<<<<<<<')
     filter = np.array(weights)
     median = apply_median_filter(noisyImage, filter)
+    end_time = (time.time() - start_time) % 60
+    imageMedianFilterPt.append(end_time)
     print(median)
     return median
 
