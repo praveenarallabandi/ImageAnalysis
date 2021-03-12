@@ -171,8 +171,8 @@ def process_image(entry, imageClass):
 
 
         # Selected image quantization technique for user-specified levels
-        print('--------------------IMAGE QUANTIZATION--------------------')
-        quantImage = image_quantization(singleSpectrumImage, conf["IMAGE_QUANT_LEVELS"])
+        """ print('--------------------IMAGE QUANTIZATION--------------------')
+        quantImage = image_quantization(singleSpectrumImage, conf["IMAGE_QUANT_LEVELS"]) """
 
         # Selected image quantization technique for user-specified levels
         print('--------------------IMAGE QUANTIZATION MEAN SQUARE ERROR (MSE)--------------------')
@@ -201,7 +201,7 @@ def process_image(entry, imageClass):
         return e
     
 def histogram(image: np.array, bins) -> np.array:
-    vals = np.mean(image, axis=(0,1)).flatten()
+    vals = np.mean(image, axis=0)
     # bins are defaulted to image.max and image.min values
     hist, bins2 = np.histogram(vals, bins, density=True)
     return hist
@@ -215,28 +215,23 @@ def calc_histogram(image):
     start_time = time.time()
     maxval = 255.0
     bins = np.linspace(0.0, maxval, 257)
-    hist = histogram(image, bins)
-    equalized = equalize_histogram(image, hist, bins)
+    flatImage = image.flatten()
+    hist = histogram(flatImage, bins)
+    equalized = equalize_histogram(flatImage, hist, bins)
     imgEqualized = np.reshape(equalized, image.shape)
     end_time = (time.time() - start_time) % 60
     imageHistogramPt.append(end_time)
     return hist, histogram(equalized, bins), imgEqualized
 
 # EQUALIZE HISTOGRAM
-def equalize_histogram(a, hist, bins):
-    # https://gist.github.com/TimSC/6f429dfacf523f5c9a58c3b629f0540e
-	""" a = np.array(a)
-	hist, bins2 = np.histogram(a, bins=bins) """
-	#Compute CDF from histogram
-	cdf = np.cumsum(hist, dtype=np.float64)
-	cdf = np.hstack(([0], cdf))
-	cdf = cdf / cdf[-1]
-	#Do equalization
-	binnum = np.digitize(a, bins, True)-1
-	neg = np.where(binnum < 0)
-	binnum[neg] = 0
-	aeq = cdf[binnum] * bins[-1]
-	return aeq
+def equalize_histogram(image, hist, bins):
+    cumsum = np.cumsum(hist)
+    nj = (cumsum - cumsum.min()) * 255
+    N = cumsum.max() - cumsum.min()
+    cumsum = nj / N
+    casted = cumsum.astype(np.uint8)
+    equalized = casted[image]
+    return equalized
 
 # IMAGE QUANTIZATION
 def image_quantization(image, level):
