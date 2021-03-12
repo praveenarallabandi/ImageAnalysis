@@ -86,11 +86,13 @@ def groupImageClass(entries):
     imageClasses['mild'] = mild
     imageClasses['moderate'] = moderate
     imageClasses['severe'] = severe
+        
 
     for imageClass in imageClasses:
+        start_time = time.time()
+        print('Processing Image Class - {}'.format(imageClass))
         for image in imageClasses[imageClass]:
             print('Processing Image - {}'.format(image.name))
-            print('Processing Image Class - {}'.format(imageClass))
             # print('Processing Input - {0}, {1}, {2}, {3}, {4}, {5}, {6}'.format(input.path, input.noiseType, input.NoiseStrength, input.NoiseGMeanL, input.NoiseGSD, input.SingleColorSpectum, input.ImageQuantLevel))
             process_image(image, imageClass)
         imageClassesProcessTime[imageClass] = (time.time() - start_time) % 60
@@ -102,11 +104,11 @@ def perf_metrics():
     print('\t\t PERFORMANCE METRICS ')
     print('********************************************************************')
     print('--------------------------------------------------------------------')
-    print('Total Processig time {}'.format(time.time() - start_time))
+    print('Total Processig time: {} sec'.format(time.time() - start_time))
     print('--------------------------------------------------------------------')
-    print('--------------------------------------------------------------------')
-    print('Procedure \t Total Execution Time \t Average Time Per Image')
-    print('--------------------------------------------------------------------')
+    print('-----------------------------------------------------------------------')
+    print('Procedure \t Total Execution Time (sec) \t Average Time Per Image (sec)')
+    print('-----------------------------------------------------------------------')
     ans = sum(imageNoisyGaussianPt)
     avg = ans / len(imageNoisyGaussianPt)
     print('{0} \t {1} \t {2}'.format('Gaussian Noise', ans, avg))
@@ -125,74 +127,62 @@ def perf_metrics():
     ans = sum(imageMedianFilterPt)
     avg = ans / len(imageMedianFilterPt)
     print('{0} \t {1} \t {2}'.format('Median Filter', ans, avg))
-    print('********************************************************************')
+    print('-----------------------------------------------------------------------')
     for classTime in imageClassesProcessTime:
-        print('Processig time for {0} - {1} seconds'.format(classTime, imageClassesProcessTime[classTime]))
-    print('******************************* END *************************************')
+        print('Processig time for {0}: \t\t {1} sec'.format(classTime, imageClassesProcessTime[classTime]))
+    print('-----------------------------------------------------------------------')
 
 # Process the input image
 def process_image(entry, imageClass):
     try:
-        # Given images is 1D array
-        # origImage = np.fromfile(entry, dtype = np.uint8, count = TotalPixels)
-        # origImage = plt.imread(conf["DATA_DIR"] + '/' + entry.name)
         origImage = np.asarray(Image.open(conf["DATA_DIR"] + entry.name))
-        print("--------------------ORIGINAL IMAGE--------------------")
-        print("Size of the image array: ", origImage.size)
-        print('Type of the image : ' , type(origImage)) 
-        print('Shape of the image : {}'.format(origImage.shape)) 
-        print('Image Height {}'.format(origImage.shape[0])) 
-        print('Image Width {}'.format(origImage.shape[1]))
-        print('Dimension of Image {}'.format(origImage.ndim))
-        pltImage(origImage, 'Original Image')
 
         # Converting color images to selected single color spectrum
         singleSpectrumImage = convertToSingleColorSpectrum(origImage, conf["COLOR_CHANNEL"])
 
-        print("--------------------singleSpectrumImage IMAGE--------------------")
-        print("Size of the image array: ", singleSpectrumImage.size)
-        print('Type of the image : ' , type(singleSpectrumImage)) 
-        print('Shape of the image : {}'.format(singleSpectrumImage.shape)) 
-        print('Image Height {}'.format(singleSpectrumImage.shape[0])) 
-        print('Image Width {}'.format(singleSpectrumImage.shape[1]))
-        print('Dimension of Image {}'.format(singleSpectrumImage.ndim))
 
         # Noise addition functions that will allow to corrupt each image with Gaussian & SP
-        print('--------------------NOISE--------------------')
+        # print('--------------------NOISE--------------------')
         noisyGaussianImage = corruptImageGaussian(singleSpectrumImage, conf["GAUSS_NOISE_STRENGTH"])
         noisySaltPepperImage = corruptImageSaltAndPepper(singleSpectrumImage, conf["SALT_PEPPER_STRENGTH"])
         
         # Histogram calculation for each individual image
-        print('--------------------HISTOGRAM, EQUALIZE HISTOGRAM & IMAGE QUANTIZATION--------------------')
+        # print('--------------------HISTOGRAM, EQUALIZE HISTOGRAM & IMAGE QUANTIZATION--------------------')
         histogram, eqHistogram, quantizedImage = calc_histogram(singleSpectrumImage)
 
 
         # Linear filter with user-specified mask size and pixel weights
-        print('--------------------FILTERING OPERATIONS--------------------')
+        # print('--------------------FILTERING OPERATIONS--------------------')
         linear = linearFilter(singleSpectrumImage, conf["LINEAR_MASK"], conf["LINEAR_WEIGHTS"])
         median = medianFilter(singleSpectrumImage, conf["MEDIAN_MASK"], conf["MEDIAN_WEIGHTS"])
-        # mean_filter(noisyImage, 3, 2)
-        # median_filter(noisyImage, 2, 2, 2)
 
-        export_image(noisySaltPepperImage, "salt_and_pepper_" + entry.name)
-        export_image(noisyGaussianImage, "gaussian_" + entry.name)
-        export_image(quantizedImage, "equalized_" + entry.name)
-        export_image(linear, "linear_" + entry.name)
-        export_image(median, "median_" + entry.name)
+        exportImage(noisySaltPepperImage, "salt_and_pepper_" + entry.name)
+        exportImage(noisyGaussianImage, "gaussian_" + entry.name)
+        exportImage(quantizedImage, "equalized_" + entry.name)
+        exportImage(linear, "linear_" + entry.name)
+        exportImage(median, "median_" + entry.name)
 
-        export_plot(histogram, "histogram_" + entry.name)
-        export_plot(eqHistogram, "eqhistogram_" + entry.name)
+        exportPlot(histogram, "histogram_" + entry.name)
+        exportPlot(eqHistogram, "eqhistogram_" + entry.name)
 
         # Selected image quantization technique for user-specified levels
-        print('--------------------IMAGE QUANTIZATION MEAN SQUARE ERROR (MSE)--------------------')
+        # print('--------------------IMAGE QUANTIZATION MEAN SQUARE ERROR (MSE)--------------------')
         image_quantization_mse(singleSpectrumImage, quantizedImage, entry.name)
-        # final(entry)
 
     except Exception as e:
         print(e)
         return e
     
 def histogram(image: np.array, bins) -> np.array:
+    """Calculate histogram for specified image
+
+    Args:
+        image (np.array): input image
+        bins ([type]): number of bins
+
+    Returns:
+        np.array: calculated histogram value
+    """
     vals = np.mean(image, axis=0)
     # bins are defaulted to image.max and image.min values
     hist, bins2 = np.histogram(vals, bins, density=True)
@@ -200,10 +190,14 @@ def histogram(image: np.array, bins) -> np.array:
     
 # CALCULATE HISTOGRAM    
 def calc_histogram(image):
-    # https://stackoverflow.com/questions/22159160/python-calculate-histogram-of-image
-    # https://stackoverflow.com/questions/40700501/how-to-calculate-mean-color-of-image-in-numpy-array
-    # https://matplotlib.org/2.0.2/users/image_tutorial.html
-    # https://github.com/lxcnju/histogram_equalization/blob/master/contrast.py
+    """Calculate histogram, Equalized image hostogram and quantized image for specified image
+
+    Args:
+        image ([type]): input image
+
+    Returns:
+        [type]: Histogram, Equalized Histogram , Quantized Image
+    """
     start_time = time.time()
     maxval = 255.0
     bins = np.linspace(0.0, maxval, 257)
@@ -226,15 +220,32 @@ def equalize_histogram(image, hist, bins):
     return equalized
 
 def image_quantization_mse(image, imageQuant, imageName):
-    start_time = time.time()
+    """Calculate MSE between original inage and quantized image
 
+    Args:
+        image ([type]): imput image
+        imageQuant ([type]): quantized image
+        imageName ([type]): original image
+    """
+    start_time = time.time()
+    
     mse = (np.square(image - imageQuant)).mean(axis=None)
     print('<{0}> Completed Execution - MSE: {1}'.format(imageName, mse))
     end_time = (time.time() - start_time) % 60
     imageQuantizationMsePt.append(end_time)
 
 def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
+    """Get the image based on R, G or B specturm
+
+    Args:
+        orig3DImage ([type]): original image
+        colorSpectrum ([type]): color specturm
+
+    Returns:
+        [type]: image for single color spectrum
+    """
     start_time = time.time()
+
     if(colorSpectrum == 'R') :
         img = orig3DImage[:, :, 0]
         
@@ -245,36 +256,40 @@ def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
         img = orig3DImage[:, :, 2]
 
     end_time = (time.time() - start_time) % 60
+    print(end_time)
     imageSingleSpectrumPt.append(end_time)
     return img
 
-def pltImage(image, title):
-    plt.ylabel('Height {}'.format(image.shape[0])) 
-    plt.xlabel('Width {}'.format(image.shape[1])) 
-    plt.title(title) 
-    plt.axis('off')
-    plt.imshow(image)
-    # plt.show()
-
-
-def rgb2gray(img):
-    return np.dot(img[...,:3], [0.299, 0.587,0.114]).astype(np.uint8)
-    # return np.dot(img, [0.2126, 0.7152, 0.0722])
-
 def corruptImageGaussian(image, strength):
+    """Apply gaussian with user specified strength
+
+    Args:
+        mage ([type]): input image
+        strength ([type]): user specified strength
+
+    Returns:
+        [type]: Gaussian applied noisy image
+    """
     start_time = time.time()
     mean = 0.0
     noise = np.random.normal(mean,strength,image.size)
     reshaped_noise = noise.reshape(image.shape)
     gaussian = image + reshaped_noise
-    print('>>>>>>>>>> Gaussian >>>>>>>>>>') 
-    print(format(gaussian))
     
     end_time = (time.time() - start_time) % 60
     imageNoisyGaussianPt.append(end_time)
     return gaussian
 
 def corruptImageSaltAndPepper(image, strength):
+    """Apply salt and pepper with user specified strength
+
+    Args:
+        image ([type]): input image
+        strength ([type]): user specified strength
+
+    Returns:
+        [type]: Salt & Perpper applied noisy image
+    """
     start_time = time.time()
         
     s_vs_p = 0.5
@@ -295,22 +310,25 @@ def corruptImageSaltAndPepper(image, strength):
         x = np.random.randint(0, image.shape[0] - 1)
         y = np.random.randint(0, image.shape[1] - 1)
         noisy[x][y] = 0
-        
-    print('>>>>>>>>>> Salt & Pepper >>>>>>>>>>') 
-    print(format(noisy))
          
-    
     end_time = (time.time() - start_time) % 60
     imageNoisySaltPepperPt.append(end_time)
     return noisy
 
-def apply_filter(img_array: np.array, img_filter: np.array) -> np.array:
-    """
-    Applies a linear filter to a copy of an image based on filter weights
+def apply_filter(image: np.array, weightArray: np.array) -> np.array:
+    """Applying the filter loops through every pixel in the image and 
+    multiples the neighboring pixel values by the weights in the kernel.
+
+    Args:
+        image (np.array): `[description]`
+        weightArray (np.array): [description]
+
+    Returns:
+        np.array: new filter applied array
     """
 
-    rows, cols = img_array.shape
-    height, width = img_filter.shape
+    rows, cols = image.shape
+    height, width = weightArray.shape
 
     output = np.zeros((rows - height + 1, cols - width + 1))
 
@@ -318,49 +336,32 @@ def apply_filter(img_array: np.array, img_filter: np.array) -> np.array:
         for cc in range(cols - width + 1):
             for hh in range(height):
                 for ww in range(width):
-                    imgval = img_array[rr + hh, cc + ww]
-                    filterval = img_filter[hh, ww]
+                    imgval = image[rr + hh, cc + ww]
+                    filterval = weightArray[hh, ww]
                     output[rr, cc] += imgval * filterval
 
     return output
 
-def linearFilter(noisyImage, maskSize=5, weights = List[List[int]]):
+def linearFilter(image, maskSize=9, weights = List[List[int]]):
+    """Linear filetering
+
+    Args:
+        image ([type]): Image on filetering is applied
+        maskSize (int, optional): mask size. Defaults to 9.
+        weights ([type], optional): User defined weights that are applied to each pi. Defaults to List[List[int]].
+
+    Returns:
+        [type]: [description]
+    """
     start_time = time.time()
     print('>>>>>>>>>>LINEAR<<<<<<<<<<<<<<<')
     filter = np.array(weights)
-    linear = apply_filter(noisyImage, filter)
+    linear = apply_filter(image, filter)
 
     end_time = (time.time() - start_time) % 60
     imageLinearFilterPt.append(end_time)
     print(linear)
     return linear
-
-""" def meanFilter(image, maskSize, weights):
-    # Set the kernel.
-    height, width = image.shape[:2]
-    kernel = np.ones((maskSize, maskSize), np.float32) / weights
-
-    for row in range(1, height + 1):
-        for column in range(1, width + 1):
-            # Get the area to be filtered with range indexing.
-            filter_area = image[row - 1:row + 2, column - 1:column + 2]
-            res = np.sum(np.multiply(kernel, filter_area))
-            image[row][column] = res
-
-    print('Mean Filter - {0}'.format(image))
-    return image
-
-def median_filter(image, maskSize, weights):
-    # Set the kernel.
-    height, width = image.shape[:2]
-
-    for row in range(1, height + 1):
-        for column in range(1, width + 1):
-            filter_area = image[row - 1:row + 2, column - 1:column + 2]
-            image[row][column] = np.median(filter_area)
-
-    print('Median Filter - {0}'.format(image))
-    return image """
 
 def apply_median_filter(img_array: np.array, img_filter: np.array) -> np.array:
     """
@@ -391,7 +392,17 @@ def apply_median_filter(img_array: np.array, img_filter: np.array) -> np.array:
 
     return output
 
-def medianFilter(noisyImage, maskSize=5, weights = List[List[int]]):
+def medianFilter(image, maskSize=9, weights = List[List[int]]):
+    """Median filter - Apply the median filter to median pixel value of neghbourhood
+
+    Args:
+        image ([type]): inout image
+        maskSize (int, optional): [description]. Defaults to 9.
+        weights ([type], optional): user specified weights. Defaults to List[List[int]].
+
+    Returns:
+        [type]: [description]
+    """
     # https://en.wikipedia.org/wiki/Kernel_(image_processing)
     # https://github.com/ijmbarr/image-processing-with-numpy/blob/master/image-processing-with-numpy.ipynb
     # https://github.com/susantabiswas/Digital-Image-Processing/blob/master/Day3/median_filter.py
@@ -399,45 +410,30 @@ def medianFilter(noisyImage, maskSize=5, weights = List[List[int]]):
     start_time = time.time()
     print('>>>>>>>>>>MEDIAN<<<<<<<<<<<<<<<')
     filter = np.array(weights)
-    median = apply_median_filter(noisyImage, filter)
+    median = apply_median_filter(image, filter)
     end_time = (time.time() - start_time) % 60
     imageMedianFilterPt.append(end_time)
     print(median)
     return median
 
-def final(entry):
-    perf_metrics()
-    entry.close()
-    test.close()
-    """ result2DGrayImg = rgb2gray(origImage)
-    print('-----------GRAY SCALE---------------')
-    print("Size of the image array: ", result2DGrayImg.size)
-    print('Type of the image : ' , type(result2DGrayImg)) 
-    print('Shape of the image : {}'.format(result2DGrayImg.shape)) 
-    print('Image Hight {}'.format(result2DGrayImg.shape[0])) 
-    print('Dimension of Image {}'.format(result2DGrayImg.ndim))
-    plt.imsave('Cancerouscellsmears2/RAW/Test.png', result2DGrayImg, cmap='gray')
-    entry.close()
-    plt.imsave('Cancerouscellsmears2/RAW/' + entry.name + '.png', rgb2gray(origImage))
-    print("... File successfully saved") """
-
-def export_image(image: np.array, filename: str) -> None:
-    """[summary]
+def exportImage(image: np.array, filename: str) -> None:
+    """export image to specified location
 
     Args:
-        image (np.array): [description]
-        filename (str): [description]
+        image (np.array): image to export
+        filename (str): file name to create
     """
-    print('Processing {0}'.format(filename))
     img = Image.fromarray(image)
     img = img.convert("L")
     img.save(conf["OUTPUT_DIR"] + filename)
 
-def export_plot(image: np.array, filename: str) -> None:
-    """
-    exports a historgam as a matplotlib plot
-    """
+def exportPlot(image: np.array, filename: str) -> None:
+    """exports a historgam as a matplotlib plot
 
+    Args:
+        image (np.array): image to export
+        filename (str): file name to create
+    """
     _ = plt.hist(image, bins=256, range=(0, 256))
     plt.title(filename)
     plt.savefig(conf["OUTPUT_DIR"] + filename + ".png")
