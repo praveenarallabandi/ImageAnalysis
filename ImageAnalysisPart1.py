@@ -310,29 +310,20 @@ def corruptImageSaltAndPepper(image, strength):
     Returns:
         [type]: Salt & Perpper applied noisy image
     """
-    # start_time = time.time()
-        
     s_vs_p = 0.5
     noisy = np.copy(image)
 
     # Generate Salt '1' noise
     num_salt = np.ceil(strength * image.size * s_vs_p)
-
-    for i in range(int(num_salt)):
-        x = np.random.randint(0, image.shape[0] - 1)
-        y = np.random.randint(0, image.shape[1] - 1)
-        noisy[x][y] = 0
+    cords = [np.random.randint(0, i - 1, int(num_salt))
+              for i in image.shape]
+    noisy[tuple(cords)] = 1
 
     # Generate Pepper '0' noise
     num_pepper = np.ceil(strength * image.size * (1.0 - s_vs_p))
-
-    for i in range(int(num_pepper)):
-        x = np.random.randint(0, image.shape[0] - 1)
-        y = np.random.randint(0, image.shape[1] - 1)
-        noisy[x][y] = 0
-         
-    """ end_time = (time.time() - start_time) % 60
-    imageNoisySaltPepperPt.append(end_time) """
+    cords = [np.random.randint(0, i - 1, int(num_pepper))
+              for i in image.shape]
+    noisy[tuple(cords)] = 0
     return noisy
 
 @nb.njit(fastmath=True)
