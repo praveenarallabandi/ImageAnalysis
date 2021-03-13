@@ -328,15 +328,11 @@ def applyFilter(image: np.array, weightArray: np.array) -> np.array:
     rows, cols = image.shape
     height, width = weightArray.shape
     output = np.zeros((rows - height + 1, cols - width + 1))
-    rowRange = np.arange(rows - height + 1)
-    colRange = np.arange(cols - width + 1)
-    heightRange = np.arange(height)
-    widthRange = np.arange(width)
 
-    for rrow in rowRange:
-        for ccolumn in colRange:
-            for hheight in heightRange:
-                for wwidth in widthRange:
+    for rrow in range(rows - height + 1):
+        for ccolumn in range(cols - width + 1):
+            for hheight in range(height):
+                for wwidth in range(width):
                     imgval = image[rrow + hheight, ccolumn + wwidth]
                     filterval = weightArray[hheight, wwidth]
                     output[rrow, ccolumn] += imgval * filterval
@@ -366,22 +362,24 @@ def applyMedianFilter(image: np.array, filter: np.array) -> np.array:
     pixels = np.zeros(filter.size ** 2)
     output = np.zeros((rows - height + 1, cols - width + 1))
 
+
     for rrows in range(rows - height + 1):
         for ccolumns in range(cols - width + 1):
 
-            p = 0
+            index = 0
             for hheight in range(height):
                 for wweight in range(width):
 
-                    pixels[p] = image[hheight][wweight]
-                    p += 1
+                    pixels[index] = image.item(hheight, wweight)
+                    index += 1
 
             # Sort the array of pixels inplace
             pixels.sort()
 
             # Assign the median pixel value to the filtered image.
-            output[rrows][ccolumns] = pixels[p // 2]
+            output[rrows][ccolumns] = pixels[index // 2]
 
+    print(output)
     return output
 
 def medianFilter(image, maskSize=9, weights = List[List[int]]):
