@@ -53,20 +53,24 @@ def timeit(f):
             imageLinearFilterPt.append(end_time)
         if(f.__name__ == 'medianFilter'):
             imageMedianFilterPt.append(end_time)
-        # single_time_data[f.__name__] = (end_time - start_time) * 1000
-        # print((end_time - start_time) * 1000)
+        if(f.__name__ == 'image_quantization_mse'):
+            imageQuantizationMsePt.append(end_time)
         return result
 
     return timed
 
 # Process files in directory as a batch
 def process_batch(input):
-    # basepath = ('./Cancerouscellsmears2')
     base_path = conf["DATA_DIR"]
     with os.scandir(base_path) as entries:
         groupImageClass(entries)
 
 def groupImageClass(entries):
+    """Group images into class based on their name
+
+    Args:
+        entries ([type]): Batch files in directory
+    """
     columnar, parabasal, intermediate, superficial, mild, moderate, severe = [],[], [], [], [], [], []
 
     for entry in entries:
@@ -103,8 +107,6 @@ def groupImageClass(entries):
 
     for imageClass in imageClasses:
         for image in imageClasses[imageClass]:
-            # print('Processing Image - {}'.format(image.name))
-            # print('Processing Input - {0}, {1}, {2}, {3}, {4}, {5}, {6}'.format(input.path, input.noiseType, input.NoiseStrength, input.NoiseGMeanL, input.NoiseGSD, input.SingleColorSpectum, input.ImageQuantLevel))
             process_image(image, imageClass)
 
     perf_metrics()
@@ -144,9 +146,16 @@ def perf_metrics():
 
 # Process the input image
 def process_image(entry, imageClass):
-    single_time_data = {}
+    """Process each image with specific procedures
+
+    Args:
+        entry ([type]): Input image
+        imageClass ([type]): Image class which it belongs to
+
+    Returns:
+        [type]: [description]
+    """
     try:
-        start_time = time.time()
         origImage = np.asarray(Image.open(conf["DATA_DIR"] + entry.name))
 
         # Converting color images to selected single color spectrum
@@ -157,21 +166,16 @@ def process_image(entry, imageClass):
 
         # Noise addition functions that will allow to corrupt each image with Gaussian & SP
         # print('--------------------NOISE--------------------')
-        # noisyGaussianImage = corruptImageGaussian(singleSpectrumImage, conf["GAUSS_NOISE_STRENGTH"])
         noisyGaussianImage = timeit(corruptImageGaussian)(singleSpectrumImage, conf["GAUSS_NOISE_STRENGTH"])
-        # noisySaltPepperImage = corruptImageSaltAndPepper(singleSpectrumImage, conf["SALT_PEPPER_STRENGTH"])
         noisySaltPepperImage = timeit(corruptImageSaltAndPepper)(singleSpectrumImage, conf["SALT_PEPPER_STRENGTH"])
         
         # Histogram calculation for each individual image
         # print('--------------------HISTOGRAM, EQUALIZE HISTOGRAM & IMAGE QUANTIZATION--------------------')
-        # histogram, eqHistogram, quantizedImage = calculateHistogram(singleSpectrumImage)
         histogram, eqHistogram, quantizedImage = timeit(calculateHistogram)(singleSpectrumImage)
 
         # Linear filter with user-specified mask size and pixel weights
         # print('--------------------FILTERING OPERATIONS--------------------')
-        # linear = linearFilter(singleSpectrumImage, conf["LINEAR_MASK"], conf["LINEAR_WEIGHTS"])
         linear = timeit(linearFilter)(singleSpectrumImage, conf["LINEAR_MASK"], conf["LINEAR_WEIGHTS"])
-        # median = medianFilter(singleSpectrumImage, conf["MEDIAN_MASK"], conf["MEDIAN_WEIGHTS"])
         median = timeit(medianFilter)(singleSpectrumImage, conf["MEDIAN_MASK"], conf["MEDIAN_WEIGHTS"])
 
         exportImage(noisySaltPepperImage, "salt_and_pepper_" + entry.name)
@@ -185,10 +189,8 @@ def process_image(entry, imageClass):
 
         # Selected image quantization technique for user-specified levels
         # print('--------------------IMAGE QUANTIZATION MEAN SQUARE ERROR (MSE)--------------------')
-        image_quantization_mse(singleSpectrumImage, quantizedImage, entry.name)
+        timeit(image_quantization_mse)(singleSpectrumImage, quantizedImage, entry.name)
 
-        end_time = time.time()
-        single_time_data["total"] = (end_time - start_time) * 1000
     except Exception as e:
         print(e)
         return e
@@ -208,7 +210,6 @@ def histogram(image: np.array, bins) -> np.array:
     hist, bins2 = np.histogram(vals, bins, density=True)
     return hist
     
-# CALCULATE HISTOGRAM    
 def calculateHistogram(image):
     """Calculate histogram, Equalized image hostogram and quantized image for specified image
 
@@ -218,18 +219,14 @@ def calculateHistogram(image):
     Returns:
         [type]: Histogram, Equalized Histogram , Quantized Image
     """
-    # start_time = time.time()
     maxval = 255.0
     bins = np.linspace(0.0, maxval, 257)
     flatImage = image.flatten()
     hist = histogram(flatImage, bins)
     equalized = equalize_histogram(flatImage, hist, bins)
     imgEqualized = np.reshape(equalized, image.shape)
-    """ end_time = (time.time() - start_time) % 60
-    imageHistogramPt.append(end_time) """
     return hist, histogram(equalized, bins), imgEqualized
 
-# EQUALIZE HISTOGRAM
 def equalize_histogram(image, hist, bins):
     cumsum = np.cumsum(hist)
     nj = (cumsum - cumsum.min()) * 255
@@ -247,12 +244,9 @@ def image_quantization_mse(image, imageQuant, imageName):
         imageQuant ([type]): quantized image
         imageName ([type]): original image
     """
-    start_time = time.time()
     
     mse = (np.square(image - imageQuant)).mean(axis=None)
     print('<{0}> Completed Execution - MSE: {1}'.format(imageName, mse))
-    end_time = (time.time() - start_time) % 60
-    imageQuantizationMsePt.append(end_time)
 
 def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
     """Get the image based on R, G or B specturm
@@ -264,8 +258,6 @@ def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
     Returns:
         [type]: image for single color spectrum
     """
-    """ start_time = time.time() """
-
     if(colorSpectrum == 'R') :
         img = orig3DImage[:, :, 0]
         
@@ -275,9 +267,6 @@ def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
     if(colorSpectrum == 'B') :
         img = orig3DImage[:, :, 2]
 
-    """ end_time = (time.time() - start_time) % 60
-    print(end_time)
-    imageSingleSpectrumPt.append(end_time) """
     return img
 
 def corruptImageGaussian(image, strength):
@@ -290,14 +279,11 @@ def corruptImageGaussian(image, strength):
     Returns:
         [type]: Gaussian applied noisy image
     """
-    # start_time = time.time()
     mean = 0.0
     noise = np.random.normal(mean,strength,image.size)
     reshaped_noise = noise.reshape(image.shape)
     gaussian = image + reshaped_noise
     
-    """ end_time = (time.time() - start_time) % 60
-    imageNoisyGaussianPt.append(end_time) """
     return gaussian
 
 def corruptImageSaltAndPepper(image, strength):
@@ -368,14 +354,8 @@ def linearFilter(image, maskSize=9, weights = List[List[int]]):
     Returns:
         [type]: [description]
     """
-    # start_time = time.time()
-    # print('>>>>>>>>>>LINEAR<<<<<<<<<<<<<<<')
     filter = np.array(weights)
     linear = applyFilter(image, filter)
-
-    """ end_time = (time.time() - start_time) % 60
-    imageLinearFilterPt.append(end_time)
-    print(linear) """
     return linear
 
 
@@ -416,13 +396,8 @@ def medianFilter(image, maskSize=9, weights = List[List[int]]):
     Returns:
         [type]: [description]
     """
-    # start_time = time.time()
-    # print('>>>>>>>>>>MEDIAN<<<<<<<<<<<<<<<')
     filter = np.array(weights)
     median = applyMedianFilter(image, filter)
-    """ end_time = (time.time() - start_time) % 60
-    imageMedianFilterPt.append(end_time)
-    print(median) """
     return median
 
 def exportImage(image: np.array, filename: str) -> None:
