@@ -2,6 +2,7 @@
 import os
 import toml
 import numpy as np  
+import numba as nb
 from typing import List
 import matplotlib.pyplot as plt
 import time
@@ -45,6 +46,20 @@ superficial = []
 mild = []
 severe = []
 
+# timeit: decorator to time functions
+
+
+def timeit(f, single_time_data):
+    def timed(*args, **kwargs):
+        start_time = time.time()
+        result = f(*args, **kwargs)
+        end_time = time.time()
+
+        single_time_data[f.__name__] = (end_time - start_time) * 1000
+
+        return result
+
+    return timed
 
 # Process files in directory as a batch
 def process_batch(input):
@@ -134,11 +149,16 @@ def perf_metrics():
 
 # Process the input image
 def process_image(entry, imageClass):
+    single_time_data = {}
     try:
+        start_time = time.time()
         origImage = np.asarray(Image.open(conf["DATA_DIR"] + entry.name))
 
         # Converting color images to selected single color spectrum
-        singleSpectrumImage = convertToSingleColorSpectrum(origImage, conf["COLOR_CHANNEL"])
+        # singleSpectrumImage = convertToSingleColorSpectrum(origImage, conf["COLOR_CHANNEL"])
+        singleSpectrumImage = timeit(convertToSingleColorSpectrum, single_time_data)(
+            origImage, conf["COLOR_CHANNEL"]
+        )
 
 
         # Noise addition functions that will allow to corrupt each image with Gaussian & SP
@@ -169,6 +189,8 @@ def process_image(entry, imageClass):
         # print('--------------------IMAGE QUANTIZATION MEAN SQUARE ERROR (MSE)--------------------')
         image_quantization_mse(singleSpectrumImage, quantizedImage, entry.name)
 
+        end_time = time.time()
+        single_time_data["total"] = (end_time - start_time) * 1000
     except Exception as e:
         print(e)
         return e
@@ -315,7 +337,8 @@ def corruptImageSaltAndPepper(image, strength):
     imageNoisySaltPepperPt.append(end_time)
     return noisy
 
-def apply_filter(image: np.array, weightArray: np.array) -> np.array:
+@nb.njit(fastmath=True)
+def applyFilter(image: np.array, weightArray: np.array) -> np.array:
     """Applying the filter loops through every pixel in the image and 
     multiples the neighboring pixel values by the weights in the kernel.
 
@@ -329,17 +352,20 @@ def apply_filter(image: np.array, weightArray: np.array) -> np.array:
 
     rows, cols = image.shape
     height, width = weightArray.shape
-
     output = np.zeros((rows - height + 1, cols - width + 1))
+    rowRange = np.arange(rows - height + 1)
+    colRange = np.arange(cols - width + 1)
+    heightRange = np.arange(height)
+    widthRange = np.arange(width)
 
-    for rr in range(rows - height + 1):
-        for cc in range(cols - width + 1):
-            for hh in range(height):
-                for ww in range(width):
-                    imgval = image[rr + hh, cc + ww]
-                    filterval = weightArray[hh, ww]
-                    output[rr, cc] += imgval * filterval
-
+    for rrow in rowRange:
+        for ccolumn in colRange:
+            for hheight in heightRange:
+                for wwidth in widthRange:
+                    imgval = image[rrow + hheight, ccolumn + wwidth]
+                    filterval = weightArray[hheight, wwidth]
+                    output[rrow, ccolumn] += imgval * filterval
+                    
     return output
 
 def linearFilter(image, maskSize=9, weights = List[List[int]]):
@@ -356,44 +382,42 @@ def linearFilter(image, maskSize=9, weights = List[List[int]]):
     start_time = time.time()
     print('>>>>>>>>>>LINEAR<<<<<<<<<<<<<<<')
     filter = np.array(weights)
-    linear = apply_filter(image, filter)
+    linear = applyFilter(image, filter)
 
     end_time = (time.time() - start_time) % 60
     imageLinearFilterPt.append(end_time)
     print(linear)
     return linear
 
-def apply_median_filter(img_array: np.array, img_filter: np.array) -> np.array:
-    """
-    Applies a linear filter to a copy of an image based on filter weights
-    """
 
-    rows, cols = img_array.shape
-    height, width = img_filter.shape
+def applyMedianFilter(image: np.array, filter: np.array) -> np.array:
+    rows, cols = image.shape
+    height, width = filter.shape
 
-    pixel_values = np.zeros(img_filter.size ** 2)
+    pixels = np.zeros(filter.size ** 2)
     output = np.zeros((rows - height + 1, cols - width + 1))
 
-    for rr in range(rows - height + 1):
-        for cc in range(cols - width + 1):
+    for rrows in range(rows - height + 1):
+        for ccolumns in range(cols - width + 1):
 
             p = 0
-            for hh in range(height):
-                for ww in range(width):
+            for hheight in range(height):
+                for wweight in range(width):
 
-                    pixel_values[p] = img_array[hh][ww]
+                    pixels[p] = image[hheight][wweight]
                     p += 1
 
             # Sort the array of pixels inplace
-            pixel_values.sort()
+            pixels.sort()
 
             # Assign the median pixel value to the filtered image.
-            output[rr][cc] = pixel_values[p // 2]
+            output[rrows][ccolumns] = pixels[p // 2]
 
     return output
 
 def medianFilter(image, maskSize=9, weights = List[List[int]]):
-    """Median filter - Apply the median filter to median pixel value of neghbourhood
+    """Median filter - Apply the median filter to median pixel value of neghbourhood. 
+    Applies a linear filter to a copy of an image based on filter weights
 
     Args:
         image ([type]): inout image
@@ -403,14 +427,10 @@ def medianFilter(image, maskSize=9, weights = List[List[int]]):
     Returns:
         [type]: [description]
     """
-    # https://en.wikipedia.org/wiki/Kernel_(image_processing)
-    # https://github.com/ijmbarr/image-processing-with-numpy/blob/master/image-processing-with-numpy.ipynb
-    # https://github.com/susantabiswas/Digital-Image-Processing/blob/master/Day3/median_filter.py
-    # https://stackoverflow.com/questions/58154630/image-smoothing-using-median-filter
     start_time = time.time()
     print('>>>>>>>>>>MEDIAN<<<<<<<<<<<<<<<')
     filter = np.array(weights)
-    median = apply_median_filter(image, filter)
+    median = applyMedianFilter(image, filter)
     end_time = (time.time() - start_time) % 60
     imageMedianFilterPt.append(end_time)
     print(median)
