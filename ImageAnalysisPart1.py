@@ -324,7 +324,6 @@ def applyFilter(image: np.array, weightArray: np.array) -> np.array:
     Returns:
         np.array: new filter applied array
     """
-
     rows, cols = image.shape
     height, width = weightArray.shape
     output = np.zeros((rows - height + 1, cols - width + 1))
@@ -335,8 +334,32 @@ def applyFilter(image: np.array, weightArray: np.array) -> np.array:
                 for wwidth in range(width):
                     imgval = image[rrow + hheight, ccolumn + wwidth]
                     filterval = weightArray[hheight, wwidth]
-                    output[rrow, ccolumn] += imgval * filterval
-                    
+                    output[rrow, ccolumn] += imgval * filterval           
+    return output
+
+def applyFilterMethod3(image: np.array, weightArray: np.array) -> np.array:
+    rows, cols = image.shape 
+    height, width = weightArray.shape
+    output = np.zeros((rows - height + 1, cols - width + 1))
+    print(range(rows - height + 1))
+    rrange = range(rows - height + 1)
+    print(range(cols - width + 1))
+    crange = range(cols - width + 1)
+    print(range(height))
+    rindex = len(rrange)
+    index = 1
+    for hheight in range(height):
+        for wwidth in range(width):
+            print(index)
+            #imgval = image[rrange[:1][0] + hheight, crange[index: len(crange)][0] + wwidth]
+            imgval = image[rrange[:1][0] + hheight, crange[:1][0] + wwidth]
+            # imgval = image[rrange[:1] + hheight, crange[:1] + wwidth]
+            filterval = weightArray[hheight, wwidth]
+            output[:, :] += imgval * filterval
+            index = index + 1 
+
+    print(output)
+    print(output.shape)               
     return output
 
 def linearFilter(image, maskSize=9, weights = List[List[int]]):
@@ -351,9 +374,9 @@ def linearFilter(image, maskSize=9, weights = List[List[int]]):
         [type]: [description]
     """
     filter = np.array(weights)
+    filter = filter/sum(sum(filter))
     linear = applyFilter(image, filter)
     return linear
-
 
 def applyMedianFilter(image: np.array, filter: np.array) -> np.array:
     rows, cols = image.shape

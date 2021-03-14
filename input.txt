@@ -1,2 +1,0 @@
-path,noisetype,noisespstrength,noisegaumean,noisegausd,singlecolorspec,imagequntlevel
-./Cancerouscellsmears2,sp,0.5,'','',R, 0.5
