@@ -14,11 +14,12 @@ py ImageAnalysisPart1.py
 ```
 ## Execution
 
+```
 git clone https://github.com/praveenarallabandi/ImageAnalysis.git
 cd ImageAnalysis
 pip3 install --user pipenv
-pipenv install
-pipenv run python ImageAnalysisPart1.py
+python ImageAnalysisPart1.py
+```
 
 ## Implementation
 
