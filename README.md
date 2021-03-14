@@ -8,12 +8,6 @@
 
 ## Usage
 
-```sh
-py ImageAnalysisPart1.py
-
-```
-## Execution
-
 ```
 git clone https://github.com/praveenarallabandi/ImageAnalysis.git
 cd ImageAnalysis
