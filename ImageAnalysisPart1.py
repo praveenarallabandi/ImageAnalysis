@@ -6,9 +6,11 @@ import numba as nb
 from typing import List
 import matplotlib.pyplot as plt
 import time
+import colorama
+from colorama import Fore, Style
 from PIL import Image # Used only for importing and exporting images
 
-start_time = time.time()
+total_start_time = time.time()
 
 # resolution for images
 ROWS = 768    
@@ -17,6 +19,7 @@ TotalPixels = ROWS * COLS
 imageClasses = {}
 imageClassesProcessTime = {}
 temp = {}
+trackMse = {}
 imageNoisyGaussianPt = []
 imageHistogramPt = []
 imageSingleSpectrumPt = []
@@ -24,6 +27,8 @@ imageNoisySaltPepperPt = []
 imageQuantizationMsePt = []
 imageLinearFilterPt = []
 imageMedianFilterPt = []
+imageExport = []
+plotExport = []
 
 columnar = []
 parabasal = []
@@ -55,6 +60,10 @@ def timeit(f):
             imageMedianFilterPt.append(end_time)
         if(f.__name__ == 'image_quantization_mse'):
             imageQuantizationMsePt.append(end_time)
+        if(f.__name__ == 'exportImage'):
+            imageExport.append(end_time)
+        if(f.__name__ == 'exportPlot'):
+            plotExport.append(end_time)
         return result
 
     return timed
@@ -112,37 +121,52 @@ def groupImageClass(entries):
     perf_metrics()
 
 def perf_metrics():
+    print(Style.RESET_ALL)
+    print('Processing completed!')
+    for mse in trackMse:
+        print('<{0}> Completed Execution - MSE: {1}'.format(mse, trackMse[mse]))
+    
     print('********************************************************************')
     print('\t\t PERFORMANCE METRICS ')
     print('********************************************************************')
-    print('--------------------------------------------------------------------')
-    print('Total Processig time: {} sec'.format(time.time() - start_time))
-    print('--------------------------------------------------------------------')
     print('-----------------------------------------------------------------------')
-    print('Procedure \t Total Execution Time (ms) \t Average Time Per Image (ms)')
+    print('Procedure \t Average Per Image (ms)  Total Execution Time (ms)')
     print('-----------------------------------------------------------------------')
+    totalAvg = 0
     ans = sum(imageNoisyGaussianPt)
     avg = ans / len(imageNoisyGaussianPt)
-    print('{0} \t {1} \t {2}'.format('Gaussian Noise', ans, avg))
+    totalAvg += avg
+    print('{0} \t {1} \t {2}'.format('Gaussian Noise', avg, ans))
     ans = sum(imageNoisySaltPepperPt)
     avg = ans / len(imageNoisySaltPepperPt)
-    print('{0} \t {1} \t {2}'.format('Salt & Pepper', ans, avg))
+    totalAvg += avg
+    print('{0} \t {1} \t {2}'.format('Salt & Pepper', avg, ans))
     ans = sum(imageHistogramPt)
     avg = ans / len(imageHistogramPt)
-    print('{0} \t {1} \t {2}'.format('Histogram', ans, avg))
+    totalAvg += avg
+    print('{0} \t {1} \t {2}'.format('Histogram', avg, ans))
     ans = sum(imageSingleSpectrumPt)
     avg = ans / len(imageSingleSpectrumPt)
-    print('{0}  {1} \t {2}'.format('Single Spectrum', ans, avg))
+    totalAvg += avg
+    print('{0}  {1} \t {2}'.format('Single Spectrum', avg, ans))
     ans = sum(imageLinearFilterPt)  
     avg = ans / len(imageLinearFilterPt)
-    print('{0} \t {1} \t {2}'.format('Linear Filter', ans, avg))
+    totalAvg += avg
+    print('{0} \t {1} \t {2}'.format('Linear Filter', avg, ans))
     ans = sum(imageMedianFilterPt)
     avg = ans / len(imageMedianFilterPt)
-    print('{0} \t {1} \t {2}'.format('Median Filter', ans, avg))
-    """ print('-----------------------------------------------------------------------')
-    for classTime in imageClassesProcessTime:
-        print('Processig time for {0}: \t\t {1} sec'.format(classTime, imageClassesProcessTime[classTime]))
-    print('-----------------------------------------------------------------------') """
+    totalAvg += avg
+    print('{0} \t {1} \t {2}'.format('Median Filter', avg, ans))
+    print('{0} \t {1}'.format('TOTAL \t', totalAvg))
+    ans = sum(imageExport)
+    avg = ans / len(imageExport)
+    print('{0} \t {1} \t {2}'.format('Export Image', avg, ans))
+    ans = sum(plotExport)
+    avg = ans / len(plotExport)
+    print('{0} \t {1} \t {2}'.format('Plot Image', avg, ans))
+    print('--------------------------------------------------------------------')
+    print('Total Processig time: {} sec'.format(time.time() - total_start_time))
+    print('--------------------------------------------------------------------')
 
 # Process the input image
 def process_image(entry, imageClass):
@@ -159,11 +183,8 @@ def process_image(entry, imageClass):
         origImage = np.asarray(Image.open(conf["DATA_DIR"] + entry.name))
 
         # Converting color images to selected single color spectrum
-        singleSpectrumImage = timeit(convertToSingleColorSpectrum)(
-            origImage, conf["COLOR_CHANNEL"]
-        )
-
-
+        singleSpectrumImage = timeit(convertToSingleColorSpectrum)(origImage, conf["COLOR_CHANNEL"])
+        
         # Noise addition functions that will allow to corrupt each image with Gaussian & SP
         # print('--------------------NOISE--------------------')
         noisyGaussianImage = timeit(corruptImageGaussian)(singleSpectrumImage, conf["GAUSS_NOISE_STRENGTH"])
@@ -178,14 +199,14 @@ def process_image(entry, imageClass):
         linear = timeit(linearFilter)(singleSpectrumImage, conf["LINEAR_MASK"], conf["LINEAR_WEIGHTS"])
         median = timeit(medianFilter)(singleSpectrumImage, conf["MEDIAN_MASK"], conf["MEDIAN_WEIGHTS"])
 
-        exportImage(noisySaltPepperImage, "salt_and_pepper_" + entry.name)
-        exportImage(noisyGaussianImage, "gaussian_" + entry.name)
-        exportImage(quantizedImage, "equalized_" + entry.name)
-        exportImage(linear, "linear_" + entry.name)
-        exportImage(median, "median_" + entry.name)
+        timeit(exportImage)(noisySaltPepperImage, "salt_and_pepper_" + entry.name)
+        timeit(exportImage)(noisyGaussianImage, "noisyGaussianImage" + entry.name)
+        timeit(exportImage)(quantizedImage, "equalized_" + entry.name)
+        timeit(exportImage)(linear, "linear_" + entry.name)
+        timeit(exportImage)(median, "median_" + entry.name)
 
-        exportPlot(histogram, "histogram_" + entry.name)
-        exportPlot(eqHistogram, "eqhistogram_" + entry.name)
+        timeit(exportPlot)(histogram, "histogram_" + entry.name)
+        timeit(exportPlot)(eqHistogram, "eqhistogram_" + entry.name)
 
         # Selected image quantization technique for user-specified levels
         # print('--------------------IMAGE QUANTIZATION MEAN SQUARE ERROR (MSE)--------------------')
@@ -246,7 +267,7 @@ def image_quantization_mse(image, imageQuant, imageName):
     """
     
     mse = (np.square(image - imageQuant)).mean(axis=None)
-    print('<{0}> Completed Execution - MSE: {1}'.format(imageName, mse))
+    trackMse[imageName] = mse
 
 def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
     """Get the image based on R, G or B specturm
@@ -282,9 +303,9 @@ def corruptImageGaussian(image, strength):
     mean = 0.0
     noise = np.random.normal(mean,strength,image.size)
     reshaped_noise = noise.reshape(image.shape)
-    gaussian = image + reshaped_noise
-    
+    gaussian = np.add(image, reshaped_noise)
     return gaussian
+
 
 def corruptImageSaltAndPepper(image, strength):
     """Apply salt and pepper with user specified strength
@@ -357,9 +378,7 @@ def applyFilterMethod3(image: np.array, weightArray: np.array) -> np.array:
             filterval = weightArray[hheight, wwidth]
             output[:, :] += imgval * filterval
             index = index + 1 
-
-    print(output)
-    print(output.shape)               
+             
     return output
 
 def linearFilter(image, maskSize=9, weights = List[List[int]]):
@@ -385,7 +404,6 @@ def applyMedianFilter(image: np.array, filter: np.array) -> np.array:
     pixels = np.zeros(filter.size ** 2)
     output = np.zeros((rows - height + 1, cols - width + 1))
 
-
     for rrows in range(rows - height + 1):
         for ccolumns in range(cols - width + 1):
 
@@ -402,7 +420,6 @@ def applyMedianFilter(image: np.array, filter: np.array) -> np.array:
             # Assign the median pixel value to the filtered image.
             output[rrows][ccolumns] = pixels[index // 2]
 
-    print(output)
     return output
 
 def medianFilter(image, maskSize=9, weights = List[List[int]]):
@@ -446,6 +463,7 @@ def exportPlot(image: np.array, filename: str) -> None:
 
 def main():
     print('----------IMAGE ANALYSIS START-------------------')
+    print('Processing.......Results will be displayed after completion.....')
     global conf
     conf = toml.load('./config.toml')
 
