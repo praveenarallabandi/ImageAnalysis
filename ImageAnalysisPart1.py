@@ -70,7 +70,7 @@ def timeit(f):
 
 # Process files in directory as a batch
 def process_batch(input):
-    base_path = conf["DATA_DIR"]
+    base_path = conf["INPUT_DIR"]
     with os.scandir(base_path) as entries:
         groupImageClass(entries)
 
@@ -180,7 +180,7 @@ def process_image(entry, imageClass):
         [type]: [description]
     """
     try:
-        origImage = np.asarray(Image.open(conf["DATA_DIR"] + entry.name))
+        origImage = np.asarray(Image.open(conf["INPUT_DIR"] + entry.name))
 
         # Converting color images to selected single color spectrum
         singleSpectrumImage = timeit(convertToSingleColorSpectrum)(origImage, conf["COLOR_CHANNEL"])
