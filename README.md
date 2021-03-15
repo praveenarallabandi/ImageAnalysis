@@ -31,4 +31,32 @@ Certain image array operations are time-consuming, and those scenarios were addr
 
  ## Functions
 
- 
+```python
+def calculateHistogram(image: np.array) -> np.array:
+```
+`calculate_histogram` Generates the histogram, equalized histogram, and quantized image based on the equalized histogram
+
+```python
+def image_quantization_mse(image: np.array, imageQuant: np.array, imageName: str) -> float:
+```
+ `image_quantization_mse` Calculates mean square error for two input images
+
+```python
+def convertToSingleColorSpectrum(image: np.array, colorSpectrum: str) -> np.array:
+```
+`convertToSingleColorSpectrum` Generates the NumPy array for a single color spectrum.
+
+```python
+def corruptImageGaussian(image: np.array, strength: int) ->  np.array:
+```
+`corruptImageGaussian` Generates image with gaussian noise applied
+
+```python
+def corruptImageSaltAndPepper(image: np.array, strength: int) -> np.array:
+```
+`corruptImageSaltAndPepper` Generates image with salt and pepper noise applied
+
+```python
+def linearFilter(image, maskSize=9, weights = List[List[int]]) -> np.array:
+```
+`linearFilter` Receives a kernel or matrix of weights as a two-dimensional input list and applies that kernel to a copy of an image. The filter is then applied in loops through each pixel in the image and multiples the neighboring pixels' values by the kernel weights. The larger the kernel, the larger the pixel's neighborhood that affects the pixel. 

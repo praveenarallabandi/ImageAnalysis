@@ -269,24 +269,24 @@ def image_quantization_mse(image: np.array, imageQuant: np.array, imageName: str
     mse = (np.square(image - imageQuant)).mean(axis=None)
     trackMse[imageName] = mse
 
-def convertToSingleColorSpectrum(orig3DImage: np.array, colorSpectrum: str) -> np.array:
+def convertToSingleColorSpectrum(image: np.array, colorSpectrum: str) -> np.array:
     """Get the image based on R, G or B specturm
 
     Args:
-        orig3DImage ([type]): original image
+        image ([type]): original image
         colorSpectrum ([type]): color specturm
 
     Returns:
         [type]: image for single color spectrum
     """
     if(colorSpectrum == 'R') :
-        img = orig3DImage[:, :, 0]
+        img = image[:, :, 0]
         
     if(colorSpectrum == 'G') :
-        img = orig3DImage[:, :, 1]
+        img = image[:, :, 1]
 
     if(colorSpectrum == 'B') :
-        img = orig3DImage[:, :, 2]
+        img = image[:, :, 2]
 
     return img
 
@@ -381,7 +381,7 @@ def applyFilterMethod3(image: np.array, weightArray: np.array) -> np.array:
              
     return output
 
-def linearFilter(image, maskSize=9, weights = List[List[int]]):
+def linearFilter(image, maskSize=9, weights = List[List[int]]) -> np.array:
     """Linear filetering
 
     Args:
