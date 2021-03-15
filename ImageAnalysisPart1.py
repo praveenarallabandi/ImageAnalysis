@@ -120,50 +120,64 @@ def groupImageClass(entries):
 
     perf_metrics()
 
+def printMsg(msg: str, avg, ans):
+    print(f'{Fore.YELLOW}{msg}{Style.RESET_ALL} \t{Fore.BLUE} {avg} \t {ans} {Style.RESET_ALL}')
+
 def perf_metrics():
-    print(Style.RESET_ALL)
     print('Processing completed!')
     for mse in trackMse:
         print('<{0}> Completed Execution - MSE: {1}'.format(mse, trackMse[mse]))
     
     print('********************************************************************')
-    print('\t\t PERFORMANCE METRICS ')
+    print(f'\t\t {Fore.GREEN}PERFORMANCE METRICS {Style.RESET_ALL}')
     print('********************************************************************')
     print('-----------------------------------------------------------------------')
-    print('Procedure \t Average Per Image (ms)  Total Execution Time (ms)')
+    print(f'{Fore.GREEN}Procedure \t Average Per Image (ms)  Total Execution Time (ms){Style.RESET_ALL}')
     print('-----------------------------------------------------------------------')
     totalAvg = 0
+    RED = "\x1b[1;31;40m"
     ans = sum(imageNoisyGaussianPt)
     avg = ans / len(imageNoisyGaussianPt)
     totalAvg += avg
-    print('{0} \t {1} \t {2}'.format('Gaussian Noise', avg, ans))
+    # print(f'{Fore.YELLOW}Gaussian Noise{Style.RESET_ALL} \t{Fore.BLUE} {avg} \t {ans} {Style.RESET_ALL}')
+    printMsg('Gaussian Noise', avg, ans)
     ans = sum(imageNoisySaltPepperPt)
     avg = ans / len(imageNoisySaltPepperPt)
     totalAvg += avg
-    print('{0} \t {1} \t {2}'.format('Salt & Pepper', avg, ans))
+    # print('{0} \t {1} \t {2}'.format('Salt & Pepper', avg, ans))
+    printMsg('Salt & Pepper', avg, ans)
     ans = sum(imageHistogramPt)
     avg = ans / len(imageHistogramPt)
     totalAvg += avg
-    print('{0} \t {1} \t {2}'.format('Histogram', avg, ans))
+    # print('{0} \t {1} \t {2}'.format('Histogram', avg, ans))
+    printMsg('Histogram', avg, ans)
     ans = sum(imageSingleSpectrumPt)
     avg = ans / len(imageSingleSpectrumPt)
     totalAvg += avg
-    print('{0}  {1} \t {2}'.format('Single Spectrum', avg, ans))
+    # print('{0}  {1} \t {2}'.format('Single Spectrum', avg, ans))
+    # printMsg('Single Spectrum', avg, ans)
+    print(f'{Fore.YELLOW}Single Spectrum{Style.RESET_ALL} {Fore.BLUE} {avg} \t {ans} {Style.RESET_ALL}')
     ans = sum(imageLinearFilterPt)  
     avg = ans / len(imageLinearFilterPt)
     totalAvg += avg
-    print('{0} \t {1} \t {2}'.format('Linear Filter', avg, ans))
+    # print('{0} \t {1} \t {2}'.format('Linear Filter', avg, ans))
+    printMsg('Linear Filter', avg, ans)
     ans = sum(imageMedianFilterPt)
     avg = ans / len(imageMedianFilterPt)
     totalAvg += avg
-    print('{0} \t {1} \t {2}'.format('Median Filter', avg, ans))
-    print('{0} \t {1}'.format('TOTAL \t', totalAvg))
+    # print('{0} \t {1} \t {2}'.format('Median Filter', avg, ans))
+    printMsg('Median Filter', avg, ans)
+    # print('{0} \t {1}'.format('TOTAL \t', totalAvg))
+    printMsg('TOTAL', avg, ans)
+    # print(f'{Fore.RED}TOTAL \t\t{Style.RESET_ALL} {Fore.BLUE}{avg} \t {ans} {Style.RESET_ALL}')
     ans = sum(imageExport)
     avg = ans / len(imageExport)
-    print('{0} \t {1} \t {2}'.format('Export Image', avg, ans))
+    # print('{0} \t {1} \t {2}'.format('Export Image', avg, ans))
+    printMsg('Export Image', avg, ans)
     ans = sum(plotExport)
     avg = ans / len(plotExport)
-    print('{0} \t {1} \t {2}'.format('Plot Image', avg, ans))
+    # print('{0} \t {1} \t {2}'.format('Plot Image', avg, ans))
+    printMsg('Plot Image', avg, ans)
     print('--------------------------------------------------------------------')
     print('Total Processig time: {} sec'.format(time.time() - total_start_time))
     print('--------------------------------------------------------------------')
@@ -424,8 +438,7 @@ def applyMedianFilter(image: np.array, filter: np.array) -> np.array:
     return output
 
 def medianFilter(image, maskSize=9, weights = List[List[int]]):
-    """Median filter - Apply the median filter to median pixel value of neghbourhood. 
-    Applies a linear filter to a copy of an image based on filter weights
+    """Median filter - Apply the median filter to median pixel value of neghbourhood.
 
     Args:
         image ([type]): inout image

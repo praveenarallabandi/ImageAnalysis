@@ -25,7 +25,7 @@ Certain image array operations are time-consuming, and those scenarios were addr
 
 * numpy - For Array operations
 * matplotlib - Plot
-* numba - H=JIT for speed exectuion
+* numba - JIT for speed exectuion
 * toml - Configuration settings
 * PIL (Image) - Used only for importing and exporting images
 
@@ -65,3 +65,6 @@ def linearFilter(image, maskSize=9, weights = List[List[int]]) -> np.array:
 def medianFilter(image, maskSize=9, weights = List[List[int]]):
 ```
 `medianFilter` The median filter is applied to the input image, and each pixel is replaced with the median value of its neighbors. The current pixel value as well is included in the median calculation.
+
+## Results
+
