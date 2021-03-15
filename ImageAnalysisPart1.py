@@ -231,7 +231,7 @@ def histogram(image: np.array, bins) -> np.array:
     hist, bins2 = np.histogram(vals, bins, density=True)
     return hist
     
-def calculateHistogram(image):
+def calculateHistogram(image: np.array):
     """Calculate histogram, Equalized image hostogram and quantized image for specified image
 
     Args:
@@ -248,7 +248,7 @@ def calculateHistogram(image):
     imgEqualized = np.reshape(equalized, image.shape)
     return hist, histogram(equalized, bins), imgEqualized
 
-def equalize_histogram(image, hist, bins):
+def equalize_histogram(image: np.array, hist: np.array, bins) -> np.array:
     cumsum = np.cumsum(hist)
     nj = (cumsum - cumsum.min()) * 255
     N = cumsum.max() - cumsum.min()
@@ -257,7 +257,7 @@ def equalize_histogram(image, hist, bins):
     equalized = casted[image]
     return equalized
 
-def image_quantization_mse(image, imageQuant, imageName):
+def image_quantization_mse(image: np.array, imageQuant: np.array, imageName: str) -> float:
     """Calculate MSE between original inage and quantized image
 
     Args:
@@ -269,7 +269,7 @@ def image_quantization_mse(image, imageQuant, imageName):
     mse = (np.square(image - imageQuant)).mean(axis=None)
     trackMse[imageName] = mse
 
-def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
+def convertToSingleColorSpectrum(orig3DImage: np.array, colorSpectrum: str) -> np.array:
     """Get the image based on R, G or B specturm
 
     Args:
@@ -290,7 +290,7 @@ def convertToSingleColorSpectrum(orig3DImage, colorSpectrum):
 
     return img
 
-def corruptImageGaussian(image, strength):
+def corruptImageGaussian(image: np.array, strength: int) ->  np.array:
     """Apply gaussian with user specified strength
 
     Args:
@@ -307,7 +307,7 @@ def corruptImageGaussian(image, strength):
     return gaussian
 
 
-def corruptImageSaltAndPepper(image, strength):
+def corruptImageSaltAndPepper(image: np.array, strength: int) -> np.array:
     """Apply salt and pepper with user specified strength
 
     Args:
@@ -411,14 +411,15 @@ def applyMedianFilter(image: np.array, filter: np.array) -> np.array:
             for hheight in range(height):
                 for wweight in range(width):
 
+            
                     pixels[index] = image.item(hheight, wweight)
                     index += 1
 
-            # Sort the array of pixels inplace
-            pixels.sort()
+                    # Sort the array of pixels inplace
+                    pixels.sort()
 
-            # Assign the median pixel value to the filtered image.
-            output[rrows][ccolumns] = pixels[index // 2]
+                    # Assign the median pixel value to the filtered image.
+                    output[rrows][ccolumns] = pixels[index // 2]
 
     return output
 

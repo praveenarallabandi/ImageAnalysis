@@ -21,3 +21,14 @@ The project implementation is done using Python. Using Python, we can rapidly de
 
 Certain image array operations are time-consuming, and those scenarios were addressed with optimizing NumPy arrays (using NumPy methods as much as possible) and with numba. Numba is an open-source JIT compiler that translates a subset of Python and NumPy code into fast machine code. Numba has a python function decorator for just-in-time compiling functions to machine code before executing. Using this decorator on functions that use heavy math and looping (i.e., filters and noise) provides significant speed increases with speeds similar to using lower-level compiled languages like C/C++ or Rust. For plotting histograms, Python's `matplotlib,` the relatively standard and robust plotting library, outputs plots to a file with the rest of the exported output images.
 
+## Third Party Libraries 
+
+* numpy - For Array operations
+* matplotlib - Plot
+* numba - H=JIT for speed exectuion
+* toml - Configuration settings
+* PIL (Image) - Used only for importing and exporting images
+
+ ## Functions
+
+ 
