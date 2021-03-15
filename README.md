@@ -21,7 +21,7 @@ The project implementation is done using Python. Using Python, we can rapidly de
 
 Certain image array operations are time-consuming, and those scenarios were addressed with optimizing NumPy arrays (using NumPy methods as much as possible) and with numba. Numba is an open-source JIT compiler that translates a subset of Python and NumPy code into fast machine code. Numba has a python function decorator for just-in-time compiling functions to machine code before executing. Using this decorator on functions that use heavy math and looping (i.e., filters and noise) provides significant speed increases with speeds similar to using lower-level compiled languages like C/C++ or Rust. For plotting histograms, Python's `matplotlib,` the relatively standard and robust plotting library, outputs plots to a file with the rest of the exported output images.
 
-## Third Party Libraries 
+## Dependencies 
 
 * numpy - For Array operations
 * matplotlib - Plot
@@ -60,3 +60,8 @@ def corruptImageSaltAndPepper(image: np.array, strength: int) -> np.array:
 def linearFilter(image, maskSize=9, weights = List[List[int]]) -> np.array:
 ```
 `linearFilter` Receives a kernel or matrix of weights as a two-dimensional input list and applies that kernel to a copy of an image. The filter is then applied in loops through each pixel in the image and multiples the neighboring pixels' values by the kernel weights. The larger the kernel, the larger the pixel's neighborhood that affects the pixel. 
+
+```python
+def medianFilter(image, maskSize=9, weights = List[List[int]]):
+```
+`medianFilter` The median filter is applied to the input image, and each pixel is replaced with the median value of its neighbors. The current pixel value as well is included in the median calculation.
