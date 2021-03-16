@@ -337,17 +337,17 @@ def corruptImageSaltAndPepper(image: np.array, strength: int) -> np.array:
     Returns:
         [type]: Salt & Perpper applied noisy image
     """
-    s_vs_p = 0.5
+    svsp = 0.5
     noisy = np.copy(image)
 
-    # Generate Salt '1' noise
-    num_salt = np.ceil(strength * image.size * s_vs_p)
+    # Salt '1' noise
+    num_salt = np.ceil(strength * image.size * svsp)
     cords = [np.random.randint(0, i - 1, int(num_salt))
               for i in image.shape]
     noisy[tuple(cords)] = 1
 
-    # Generate Pepper '0' noise
-    num_pepper = np.ceil(strength * image.size * (1.0 - s_vs_p))
+    # Pepper '0' noise
+    num_pepper = np.ceil(strength * image.size * (1.0 - svsp))
     cords = [np.random.randint(0, i - 1, int(num_pepper))
               for i in image.shape]
     noisy[tuple(cords)] = 0
@@ -371,7 +371,7 @@ def applyFilter(image: np.array, weightArray: np.array) -> np.array:
 
     for rrow in range(rows - height + 1):
         for ccolumn in range(cols - width + 1):
-            for hheight in range(height):
+            for hheight in range(height): # Need to vectorize this
                 for wwidth in range(width):
                     imgval = image[rrow + hheight, ccolumn + wwidth]
                     filterval = weightArray[hheight, wwidth]
@@ -402,7 +402,7 @@ def applyFilter(image: np.array, weightArray: np.array) -> np.array:
     return output """
 
 def linearFilter(image, maskSize=9, weights = List[List[int]]) -> np.array:
-    """Linear filetering
+    """Linear filtering
 
     Args:
         image ([type]): Image on filetering is applied
@@ -426,19 +426,12 @@ def applyMedianFilter(image: np.array, filter: np.array) -> np.array:
 
     for rrows in range(rows - height + 1):
         for ccolumns in range(cols - width + 1):
-
             index = 0
-            for hheight in range(height):
+            for hheight in range(height): # Need to vectorize this
                 for wweight in range(width):
-
-            
                     pixels[index] = image.item(hheight, wweight)
                     index += 1
-
-                    # Sort the array of pixels inplace
                     pixels.sort()
-
-                    # Assign the median pixel value to the filtered image.
                     output[rrows][ccolumns] = pixels[index // 2]
 
     return output
