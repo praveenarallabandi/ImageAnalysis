@@ -175,7 +175,7 @@ def perf_metrics():
     printMsg('Median Filter', avg, ans)
     # print('{0} \t {1}'.format('TOTAL \t', totalAvg))
     # printMsg('TOTAL \t', totalAvg, totalAns)
-    print(f'{Fore.WHITE}TOTAL \t\t{Style.RESET_ALL} {Fore.CYAN}{totalAvg} \t {totalAns} {Style.RESET_ALL}')
+    print(f'{Fore.GREEN}TOTAL \t\t{Style.RESET_ALL} {Fore.CYAN}{totalAvg} \t {totalAns} {Style.RESET_ALL}')
     ans = sum(imageExport)
     avg = ans / len(imageExport)
     # print('{0} \t {1} \t {2}'.format('Export Image', avg, ans))
@@ -185,7 +185,7 @@ def perf_metrics():
     # print('{0} \t {1} \t {2}'.format('Plot Image', avg, ans))
     printMsg('Plot Image', avg, ans)
     print('--------------------------------------------------------------------')
-    print(f'{Fore.WHITE}Total Processig time:{Style.RESET_ALL} {Fore.GREEN}{time.time() - total_start_time} sec')
+    print(f'{Fore.GREEN}Total Processig time:{Style.RESET_ALL} {Fore.GREEN}{time.time() - total_start_time} sec')
     print('--------------------------------------------------------------------')
 
 # Process the input image
