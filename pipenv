@@ -11,6 +11,7 @@ numpy = "*"
 matplotlib = "*"
 numba = "*"
 toml = "*"
+colorama = "*"
 
 [requires]
 python_version = "3.7"

@@ -68,3 +68,5 @@ def medianFilter(image, maskSize=9, weights = List[List[int]]):
 
 ## Results
 
+The output images are stored in output directory, mean square errors for each image is printed on stdout alsong with performance metrics
+Below is th snapshop of output
