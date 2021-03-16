@@ -378,7 +378,7 @@ def applyFilter(image: np.array, weightArray: np.array) -> np.array:
                     output[rrow, ccolumn] += imgval * filterval           
     return output
 
-def applyFilterMethod3(image: np.array, weightArray: np.array) -> np.array:
+""" def applyFilterMethod3(image: np.array, weightArray: np.array) -> np.array:
     rows, cols = image.shape 
     height, width = weightArray.shape
     output = np.zeros((rows - height + 1, cols - width + 1))
@@ -399,7 +399,7 @@ def applyFilterMethod3(image: np.array, weightArray: np.array) -> np.array:
             output[:, :] += imgval * filterval
             index = index + 1 
              
-    return output
+    return output """
 
 def linearFilter(image, maskSize=9, weights = List[List[int]]) -> np.array:
     """Linear filetering
