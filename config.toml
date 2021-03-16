@@ -1,8 +1,6 @@
-
-
 #####################################################################
 #
-# DATADIR: The directory where the input images are location
+# INPUT_DIR: The directory where the input images are location
 # OUTPUTDIR: The directory where the output images and plots should be stored
 #
 # **Important Note**
@@ -16,8 +14,6 @@
 INPUT_DIR = "./test/"
 OUTPUT_DIR = "./output/"
 
-# The number of process workers in the process pool for work on batches
-NUM_OF_PROCESSES = 10
 
 #################################################
 #
@@ -67,5 +63,3 @@ LINEAR_WEIGHTS = [
 
 MEDIAN_MASK = 1
 MEDIAN_WEIGHTS = [[1]]
-
-IMAGE_QUANT_LEVELS = 0.5
