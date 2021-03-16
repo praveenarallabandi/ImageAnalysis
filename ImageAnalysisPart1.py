@@ -6,7 +6,7 @@ import numba as nb
 from typing import List
 import matplotlib.pyplot as plt
 import time
-import colorama
+import os
 from colorama import Fore, Style
 from PIL import Image # Used only for importing and exporting images
 
@@ -467,6 +467,8 @@ def exportImage(image: np.array, filename: str) -> None:
     """
     img = Image.fromarray(image)
     img = img.convert("L")
+    if not os.path.exists(conf["OUTPUT_DIR"]):
+        os.makedirs(conf["OUTPUT_DIR"])
     img.save(conf["OUTPUT_DIR"] + filename)
 
 def exportPlot(image: np.array, filename: str) -> None:
