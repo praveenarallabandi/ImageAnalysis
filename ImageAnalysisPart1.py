@@ -129,47 +129,53 @@ def perf_metrics():
         print('<{0}> Completed Execution - MSE: {1}'.format(mse, trackMse[mse]))
     
     print('********************************************************************')
-    print(f'\t\t {Fore.GREEN}PERFORMANCE METRICS {Style.RESET_ALL}')
+    print(f'\t\t {Fore.CYAN}PERFORMANCE METRICS {Style.RESET_ALL}')
     print('********************************************************************')
     print('-----------------------------------------------------------------------')
-    print(f'{Fore.GREEN}Procedure \t Average Per Image (ms)  Total Execution Time (ms){Style.RESET_ALL}')
+    print(f'{Fore.CYAN}Procedure \t Average Per Image (ms)  Total Execution Time (ms){Style.RESET_ALL}')
     print('-----------------------------------------------------------------------')
-    totalAvg = 0
+    totalAvg = 0.0
+    totalAns = 0.0
     RED = "\x1b[1;31;40m"
     ans = sum(imageNoisyGaussianPt)
     avg = ans / len(imageNoisyGaussianPt)
-    totalAvg += avg
+    totalAvg = totalAvg + avg
     # print(f'{Fore.YELLOW}Gaussian Noise{Style.RESET_ALL} \t{Fore.BLUE} {avg} \t {ans} {Style.RESET_ALL}')
     printMsg('Gaussian Noise', avg, ans)
     ans = sum(imageNoisySaltPepperPt)
     avg = ans / len(imageNoisySaltPepperPt)
-    totalAvg += avg
+    totalAvg = totalAvg + avg
+    totalAns = totalAns + ans
     # print('{0} \t {1} \t {2}'.format('Salt & Pepper', avg, ans))
     printMsg('Salt & Pepper', avg, ans)
     ans = sum(imageHistogramPt)
     avg = ans / len(imageHistogramPt)
-    totalAvg += avg
+    totalAvg = totalAvg + avg
+    totalAns = totalAns + ans
     # print('{0} \t {1} \t {2}'.format('Histogram', avg, ans))
     printMsg('Histogram', avg, ans)
     ans = sum(imageSingleSpectrumPt)
     avg = ans / len(imageSingleSpectrumPt)
-    totalAvg += avg
+    totalAvg = totalAvg + avg
+    totalAns = totalAns + ans
     # print('{0}  {1} \t {2}'.format('Single Spectrum', avg, ans))
     # printMsg('Single Spectrum', avg, ans)
     print(f'{Fore.YELLOW}Single Spectrum{Style.RESET_ALL} {Fore.BLUE} {avg} \t {ans} {Style.RESET_ALL}')
     ans = sum(imageLinearFilterPt)  
     avg = ans / len(imageLinearFilterPt)
-    totalAvg += avg
+    totalAvg = totalAvg + avg
+    totalAns = totalAns + ans
     # print('{0} \t {1} \t {2}'.format('Linear Filter', avg, ans))
     printMsg('Linear Filter', avg, ans)
     ans = sum(imageMedianFilterPt)
     avg = ans / len(imageMedianFilterPt)
-    totalAvg += avg
+    totalAvg = totalAvg + avg
+    totalAns = totalAns + ans
     # print('{0} \t {1} \t {2}'.format('Median Filter', avg, ans))
     printMsg('Median Filter', avg, ans)
     # print('{0} \t {1}'.format('TOTAL \t', totalAvg))
-    printMsg('TOTAL', avg, ans)
-    # print(f'{Fore.RED}TOTAL \t\t{Style.RESET_ALL} {Fore.BLUE}{avg} \t {ans} {Style.RESET_ALL}')
+    # printMsg('TOTAL \t', totalAvg, totalAns)
+    print(f'{Fore.WHITE}TOTAL \t\t{Style.RESET_ALL} {Fore.CYAN}{totalAvg} \t {totalAns} {Style.RESET_ALL}')
     ans = sum(imageExport)
     avg = ans / len(imageExport)
     # print('{0} \t {1} \t {2}'.format('Export Image', avg, ans))
@@ -179,7 +185,7 @@ def perf_metrics():
     # print('{0} \t {1} \t {2}'.format('Plot Image', avg, ans))
     printMsg('Plot Image', avg, ans)
     print('--------------------------------------------------------------------')
-    print('Total Processig time: {} sec'.format(time.time() - total_start_time))
+    print(f'{Fore.WHITE}Total Processig time:{Style.RESET_ALL} {Fore.GREEN}{time.time() - total_start_time} sec')
     print('--------------------------------------------------------------------')
 
 # Process the input image
