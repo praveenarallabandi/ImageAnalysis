@@ -4,7 +4,7 @@
 # OUTPUTDIR: Output direcotry to save processed images
 #
 #####################################################################
-INPUT_DIR = "./Cancerouscellsmears2/"
+INPUT_DIR = "./test/"
 OUTPUT_DIR = "./output/"
 
 
