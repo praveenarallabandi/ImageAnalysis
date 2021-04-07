@@ -7,6 +7,13 @@
 INPUT_DIR = "./test/"
 OUTPUT_DIR = "./output/"
 
+INPUT_SEG_DIR = "./dataset/input/"
+OUTPUT_SEG_DIR = "./dataset/output/"
+FILE_EXTENSION = ".BMP"
+
+# The number of process workers in the process pool for work on batches
+NUM_OF_PROCESSES = 10
+
 
 #################################################
 #

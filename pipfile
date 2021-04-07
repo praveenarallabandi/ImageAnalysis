@@ -12,7 +12,6 @@ matplotlib = "*"
 numba = "*"
 toml = "*"
 colorama = "*"
-
 pillow = "*"
 click = "*"
 tqdm = "*"

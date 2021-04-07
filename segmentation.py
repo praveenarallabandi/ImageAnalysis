@@ -11,23 +11,11 @@ from multiprocessing import Pool
 from typing import Any, List, Dict
 from click import clear, echo, style, secho
 
-from utils import (
-    get_image_data,
-    export_image,
-    select_channel,
-    histogram,
-    convolve,
-    gaussian_kernel,
-    sobel_filters,
-    non_max_suppression,
-    threshold,
-    hysteresis,
-    find_middle_hist,
-    k_means,
-)
+from imageLibUtil import *
+from watershedSegmentation import Watershed
 
 conf: Dict[str, Any] = {}
-colorChannel = ''
+colorChannel = 'R'
 outputDir = ''
 
 
@@ -115,13 +103,13 @@ def histogram_clustering(img_arr: np.array) -> np.array:
 
 def canny_edge_detection(img_arr: np.array) -> np.array:
 
-    guass = gaussian_kernel(5)
+    guass = gaussianKernel(5)
 
     blurred_image = convolve(img_arr, guass)
 
-    sobel, theta = sobel_filters(blurred_image)
+    sobel, theta = sobelFilters(blurred_image)
 
-    suppresion = non_max_suppression(sobel, theta)
+    suppresion = nonMaxSuppression(sobel, theta)
 
     threshold_image, weak, strong = threshold(suppresion)
 
@@ -130,7 +118,7 @@ def canny_edge_detection(img_arr: np.array) -> np.array:
     return canny_image
 
 
-def apply_operations(file: Path) -> str:
+def apply_operations(file: Path, conf) -> str:
     """
     Image segmentation–requirement for the project part 2:
     1. Implement one selected edge detection algorithm.
@@ -147,7 +135,7 @@ def apply_operations(file: Path) -> str:
 
     try:
         img = get_image_data(file)
-        img = select_channel(img, "red")
+        img = select_channel(img, conf["COLOR_CHANNEL"])
         
         # Edge detection
         edges = canny_edge_detection(img)
@@ -164,11 +152,16 @@ def apply_operations(file: Path) -> str:
         # Erosion
         eroded = erode(segmented_thresholding)
 
-        export_image(edges, f"edges_{file.stem}", conf)
-        export_image(segmented_clustering, f"seg_clusting_{file.stem}", conf)
-        export_image(segmented_thresholding, f"seg_thresholding_{file.stem}", conf)
-        export_image(dilated, f"dilated_{file.stem}", conf)
-        export_image(eroded, f"eroded_{file.stem}", conf)
+        # watershed segmentation
+        w = Watershed()
+        labels = w.apply(img)
+
+        exportImage(edges, f"edges_{file.stem}", conf)
+        exportImage(segmented_clustering, f"seg_clusting_{file.stem}", conf)
+        exportImage(segmented_thresholding, f"seg_thresholding_{file.stem}", conf)
+        exportImage(dilated, f"dilated_{file.stem}", conf)
+        exportImage(eroded, f"eroded_{file.stem}", conf)
+        exportImage(labels, f"ws_segmentation_{file.stem}", conf)
     except Exception as e:
         traceback.print_exc()
         return style(f"[ERROR] {file.stem} has an issue: {e}", fg="red")
@@ -176,7 +169,7 @@ def apply_operations(file: Path) -> str:
     return style(f"{f'[INFO:{file.stem}]':15}", fg="green")
 
 
-def parallel_operations(files: List[Path]):
+def processImages(files: List[Path]):
     """
     Batch operates on a set of images in a multiprocess pool
     """
@@ -204,13 +197,13 @@ def parallel_operations(files: List[Path]):
     show_default=True,
 )
 def main(config_location: str):
-    global conf
-    conf = toml.load(config_location)
-
     clear()
+    global conf
+    conf = toml.load('./config.toml')
 
-    base_path: Path = Path(conf["DATA_DIR"])
+    base_path: Path = Path(conf["INPUT_SEG_DIR"])
     colorChannel = conf["COLOR_CHANNEL"]
+    print(colorChannel)
 
     files: List = list(base_path.glob(f"*{conf['FILE_EXTENSION']}"))
     echo(
@@ -218,14 +211,14 @@ def main(config_location: str):
         + f"image directory: {str(base_path)}; {len(files)} images found"
     )
 
-    Path(conf["OUTPUT_DIR"]).mkdir(parents=True, exist_ok=True)
+    Path(conf["OUTPUT_SEG_DIR"]).mkdir(parents=True, exist_ok=True)
 
     # [!!!] Only for development
     # DATA_SUBSET = 1
     # files = files[:DATA_SUBSET]
 
     t0 = time.time()
-    parallel_operations(files)
+    processImages(files)
     t_delta = time.time() - t0
 
     print()
