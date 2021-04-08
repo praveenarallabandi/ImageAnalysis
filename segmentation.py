@@ -17,6 +17,7 @@ from watershedSegmentation import Watershed
 conf: Dict[str, Any] = {}
 colorChannel = 'R'
 outputDir = ''
+configLoc = './config.toml'
 
 
 def erode(img_arr: np.array, win: int = 1) -> np.array:
@@ -118,7 +119,7 @@ def canny_edge_detection(img_arr: np.array) -> np.array:
     return canny_image
 
 
-def apply_operations(file: Path, conf) -> str:
+def apply_operations(file: Path) -> str:
     """
     Image segmentation–requirement for the project part 2:
     1. Implement one selected edge detection algorithm.
@@ -135,6 +136,7 @@ def apply_operations(file: Path, conf) -> str:
 
     try:
         img = get_image_data(file)
+        conf = toml.load(configLoc) # need to change to global variable
         img = select_channel(img, conf["COLOR_CHANNEL"])
         
         # Edge detection
@@ -186,7 +188,7 @@ def processImages(files: List[Path]):
                 pbar.update()
 
 
-@click.command()
+""" @click.command()
 @click.option(
     "config_location",
     "-c",
@@ -195,15 +197,12 @@ def processImages(files: List[Path]):
     type=click.Path(exists=True),
     default="config.toml",
     show_default=True,
-)
+) """
 def main(config_location: str):
     clear()
     global conf
-    conf = toml.load('./config.toml')
-
+    conf = toml.load(config_location)
     base_path: Path = Path(conf["INPUT_SEG_DIR"])
-    colorChannel = conf["COLOR_CHANNEL"]
-    print(colorChannel)
 
     files: List = list(base_path.glob(f"*{conf['FILE_EXTENSION']}"))
     echo(
@@ -226,4 +225,4 @@ def main(config_location: str):
 
 
 if __name__ == "__main__":
-    main()
+    main(configLoc)
