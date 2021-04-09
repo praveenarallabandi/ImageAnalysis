@@ -119,41 +119,41 @@ The output of this program can be seen in two places. The first is in the output
 
     canny_edge_detection(img_array: np.array) -> np.array
 
-![assets/let60.bmp](assets/let60.bmp)
+![dataset/input/cyl01.BMP](dataset/input/cyl01.BMP)
 
 Original
 
-![assets/edges_let60.bmp](assets/edges_let60.bmp)
+![dataset/output/edges_cyl01.jpg](dataset/output/edges_cyl01.jpg)
 
 After Edge Detection
 
     dilate(img_array: np.array, win: int = 1) -> np.array
 
-![assets/svar12.bmp](assets/svar12.bmp)
+![dataset/input/inter01.bmp](dataset/input/inter01.bmp)
 
 original
 
-![assets/dilated_svar12.BMP.bmp](assets/dilated_svar12.BMP.bmp)
+![dataset/output/dilated_inter01.jpg](dataset/output/dilated_inter01.jpg)
 
 Segmented and Dilated
 
     erode(img_array: np.array, win: int = 1) -> np.array
 
-![assets/svar12.bmp](assets/svar12.bmp)
+![dataset/input/let01.bmp](dataset/input/let01.bmp)
 
 original
 
-![assets/eroded_svar12.BMP.bmp](assets/eroded_svar12.BMP.bmp)
+![dataset/output/eroded_let01.jpg](dataset/output/eroded_let01.jpg)
 
 Segmented and Eroded
 
     histogram_thresholding(img_array: np.array) -> np.array
 
-![assets/super14.bmp](assets/super14.bmp)
+![dataset/input/mod01.bmp](dataset/input/mod01.bmp)
 
 original
 
-![assets/seg_thresholding_super14.BMP.bmp](assets/seg_thresholding_super14.BMP.bmp)
+![dataset/output/seg_thresholding_mod01.jpg](dataset/output/seg_thresholding_mod01.jpg)
 
 segmented
 
@@ -161,10 +161,10 @@ segmented
 
 ---
 
-![assets/inter25.bmp](assets/inter25.BMP)
+![dataset/input/svar01.bmp](dataset/input/svar01.bmp)
 
 original
 
-![assets/seg_clusting_inter25.bmp](assets/seg_clusting_inter25.BMP)
+![dataset/output/seg_clusting_svar01.jpg](dataset/output/seg_clusting_svar01.jpg)
 
 segmented
