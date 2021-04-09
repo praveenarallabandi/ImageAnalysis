@@ -129,7 +129,7 @@ After Edge Detection
 
     dilate(img_array: np.array, win: int = 1) -> np.array
 
-![dataset/input/inter01.bmp](dataset/input/inter01.bmp)
+![dataset/input/inter01.BMP](dataset/input/inter01.BMP)
 
 original
 
@@ -139,7 +139,7 @@ Segmented and Dilated
 
     erode(img_array: np.array, win: int = 1) -> np.array
 
-![dataset/input/let01.bmp](dataset/input/let01.bmp)
+![dataset/input/let01.BMP](dataset/input/let01.BMP)
 
 original
 
@@ -149,7 +149,7 @@ Segmented and Eroded
 
     histogram_thresholding(img_array: np.array) -> np.array
 
-![dataset/input/mod01.bmp](dataset/input/mod01.bmp)
+![dataset/input/mod01.BMP](dataset/input/mod01.BMP)
 
 original
 
@@ -161,7 +161,7 @@ segmented
 
 ---
 
-![dataset/input/svar01.bmp](dataset/input/svar01.bmp)
+![dataset/input/svar01.BMP](dataset/input/svar01.BMP)
 
 original
 
